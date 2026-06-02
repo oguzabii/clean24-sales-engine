@@ -1,0 +1,265 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { CITIES } from "@/lib/constants";
+import type { LeadFormData } from "@/lib/lead-payload";
+
+interface LeadFormProps {
+  prefilledData?: Partial<LeadFormData>;
+  estimatedMin?: number;
+  estimatedMax?: number;
+  onBack?: () => void;
+  pagePath?: string;
+}
+
+type FormState = Omit<LeadFormData, "source" | "service_type">;
+
+export default function LeadForm({
+  prefilledData = {},
+  estimatedMin,
+  estimatedMax,
+  onBack,
+  pagePath,
+}: LeadFormProps) {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [form, setForm] = useState<Partial<FormState>>({
+    apartment_size: "3.5",
+    addons: {},
+    express: false,
+    ...prefilledData,
+  });
+
+  const updateField = (key: keyof FormState, value: string | boolean | Record<string, boolean>) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const utmParams =
+        typeof window !== "undefined"
+          ? Object.fromEntries(new URLSearchParams(window.location.search).entries())
+          : {};
+
+      const payload = {
+        ...form,
+        page_path: pagePath ?? (typeof window !== "undefined" ? window.location.pathname : "/"),
+        utm_source: utmParams.utm_source,
+        utm_medium: utmParams.utm_medium,
+        utm_campaign: utmParams.utm_campaign,
+      };
+
+      const res = await fetch("/api/leads/website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Fehler beim Absenden. Bitte versuchen Sie es erneut.");
+      }
+
+      router.push("/danke");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unbekannter Fehler.");
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {estimatedMin && estimatedMax && (
+        <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-700">
+          Ihr Richtpreis: <strong>CHF {estimatedMin} – CHF {estimatedMax}</strong>
+          <span className="block text-xs text-blue-400 mt-0.5">
+            Wird nach Prüfung Ihrer Angaben bestätigt.
+          </span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            value={form.customer_name ?? ""}
+            onChange={(e) => updateField("customer_name", e.target.value)}
+            placeholder="Vorname Nachname"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Telefon <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="tel"
+            required
+            value={form.phone ?? ""}
+            onChange={(e) => updateField("phone", e.target.value)}
+            placeholder="+41 79 000 00 00"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          E-Mail <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="email"
+          required
+          value={form.email ?? ""}
+          onChange={(e) => updateField("email", e.target.value)}
+          placeholder="ihre@email.ch"
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            PLZ <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            value={form.zip ?? ""}
+            onChange={(e) => updateField("zip", e.target.value)}
+            placeholder="8953"
+            maxLength={4}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Ort <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            list="city-list"
+            value={form.city ?? ""}
+            onChange={(e) => updateField("city", e.target.value)}
+            placeholder="Dietikon"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <datalist id="city-list">
+            {CITIES.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Reinigungsdatum <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            required
+            value={form.cleaning_date ?? ""}
+            onChange={(e) => updateField("cleaning_date", e.target.value)}
+            min={new Date().toISOString().split("T")[0]}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Abgabetermin (optional)
+          </label>
+          <input
+            type="date"
+            value={form.handover_date ?? ""}
+            onChange={(e) => updateField("handover_date", e.target.value)}
+            min={new Date().toISOString().split("T")[0]}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Fläche m² (optional)
+          </label>
+          <input
+            type="number"
+            value={form.square_meters ?? ""}
+            onChange={(e) => updateField("square_meters", e.target.value)}
+            placeholder="z.B. 85"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Anzahl Fenster (optional)
+          </label>
+          <input
+            type="number"
+            value={form.windows_count ?? ""}
+            onChange={(e) => updateField("windows_count", e.target.value)}
+            placeholder="z.B. 8"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Bemerkungen (optional)
+        </label>
+        <textarea
+          rows={3}
+          value={form.notes ?? ""}
+          onChange={(e) => updateField("notes", e.target.value)}
+          placeholder="Besonderheiten, spezielle Wünsche, Fragen..."
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        />
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="flex gap-3">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex-1 border border-gray-200 text-gray-600 hover:text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors"
+          >
+            Zurück
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="flex-grow bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+        >
+          {submitting ? "Wird gesendet..." : "Kostenlose Anfrage absenden"}
+        </button>
+      </div>
+
+      <p className="text-xs text-gray-400 text-center">
+        Keine Vorauszahlung. Unverbindlich. Wir antworten innerhalb von 2 Stunden.
+      </p>
+    </form>
+  );
+}

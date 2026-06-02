@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local tool / editor state
+.claude/
+
+# backup files from local processing
+*.bak
+
+# original unprocessed brand assets (cleaned versions live in public/)
+/Clean24 Logo.png

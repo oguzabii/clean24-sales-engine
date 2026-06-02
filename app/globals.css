@@ -8,19 +8,119 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ----- Premium motion ------------------------------------------------- */
+
+/* Section reveal on viewport entry — uses CSS only (paired with the
+   `data-reveal` attribute and a tiny IntersectionObserver script). */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 600ms ease-out, transform 600ms ease-out;
+  will-change: opacity, transform;
+}
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Subtle gradient background drift used behind hero. */
+@keyframes c24-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.c24-bg-drift {
+  background-size: 200% 200%;
+  animation: c24-drift 18s ease-in-out infinite;
+}
+
+/* Live status dot — pulsing ring. */
+@keyframes c24-ping-soft {
+  0% { transform: scale(1); opacity: 0.55; }
+  80%, 100% { transform: scale(2.4); opacity: 0; }
+}
+.c24-live-dot {
+  position: relative;
+  display: inline-flex;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #22c55e;
+}
+.c24-live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: #22c55e;
+  animation: c24-ping-soft 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Vertical activity ticker — translates the list upwards, then loops.
+   Uses a doubled list inside .c24-ticker-track so the loop is seamless. */
+@keyframes c24-ticker-up {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+.c24-ticker {
+  position: relative;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+}
+.c24-ticker-track {
+  display: flex;
+  flex-direction: column;
+  animation: c24-ticker-up 28s linear infinite;
+}
+.c24-ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* Animated number entrance — counts up via opacity + slight slide. */
+@keyframes c24-count-in {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.c24-count-in {
+  animation: c24-count-in 700ms ease-out both;
+}
+
+/* Soft floating glow used inside dark hero. */
+@keyframes c24-glow-float {
+  0%, 100% { transform: translate(0, 0); opacity: 0.55; }
+  50% { transform: translate(20px, -10px); opacity: 0.9; }
+}
+.c24-glow {
+  animation: c24-glow-float 12s ease-in-out infinite;
+}
+
+/* Respect user preference. */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .c24-bg-drift,
+  .c24-live-dot::after,
+  .c24-ticker-track,
+  .c24-count-in,
+  .c24-glow {
+    animation: none !important;
+  }
+}
+
+/* Sticky bottom mobile CTA — safe-area aware. */
+.c24-sticky-cta {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
