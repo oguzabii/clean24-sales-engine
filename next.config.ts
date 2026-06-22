@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Keep nodemailer (a Node-only package) out of the bundler so it loads
+  // natively in the Node.js runtime used by the email API routes.
+  serverExternalPackages: ["nodemailer"],
+
   /**
    * Temporary 307 redirects for the older local SEO routes.
    * These pages still use the legacy visual style; while we align them with

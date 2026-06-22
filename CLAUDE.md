@@ -45,7 +45,7 @@ clean24-sales-engine/
 │   ├── CTASection.tsx
 │   ├── ReviewPlaceholder.tsx
 │   ├── LocalSeoPage.tsx         # Shared template for all local SEO pages
-│   └── ChecklisteForm.tsx       # Client component for email capture
+│   └── ChecklistMagnet.tsx      # Checklist email capture, POSTs to /api/checkliste
 ├── lib/
 │   ├── constants.ts             # Company data, pricing, cities
 │   ├── pricing.ts               # Price calculation logic

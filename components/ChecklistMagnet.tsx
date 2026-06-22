@@ -35,17 +35,35 @@ export default function ChecklistMagnet({
   previewItemsPerLockedSection = 3,
 }: ChecklistMagnetProps) {
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">(
+    "idle"
+  );
+
+  // Only a confirmed SMTP delivery counts as "submitted" — keeps the UI honest.
+  const submitted = status === "success";
+  const submitting = status === "submitting";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitted) return;
-    setSubmitting(true);
-    // Tiny artificial delay for credible feedback
-    await new Promise((r) => setTimeout(r, 600));
-    setSubmitted(true);
-    setSubmitting(false);
+    if (status === "submitting" || status === "success") return;
+    setStatus("submitting");
+
+    try {
+      const res = await fetch("/api/checkliste", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          page_path:
+            typeof window !== "undefined" ? window.location.pathname : undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("send failed");
+      setStatus("success");
+    } catch {
+      // Do not claim success the email could not be confirmed.
+      setStatus("error");
+    }
   };
 
   const visibleSections = sections.slice(0, previewSectionCount);
@@ -90,13 +108,23 @@ export default function ChecklistMagnet({
                 <div>
                   <div className="text-white font-semibold mb-1">Danke!</div>
                   <p className="text-sm text-blue-100/85 leading-relaxed">
-                    Ihre Anfrage wurde erfasst – die vollständige Checkliste wird Ihnen per E-Mail
-                    zugestellt. Prüfen Sie ggf. den Spam-Ordner.
+                    Die Checkliste wurde an Ihre E-Mail-Adresse gesendet. Prüfen Sie ggf. den
+                    Spam-Ordner.
                   </p>
                 </div>
               </div>
             </div>
           ) : (
+            <>
+            {status === "error" && (
+              <div
+                role="alert"
+                className="max-w-lg mx-auto mb-3 bg-amber-500/15 border border-amber-400/30 rounded-2xl px-5 py-4 text-left text-sm text-amber-100 leading-relaxed"
+              >
+                Die Anfrage wurde erfasst, aber der Versand konnte gerade nicht bestätigt werden.
+                Bitte kontaktieren Sie uns direkt per WhatsApp oder E-Mail.
+              </div>
+            )}
             <form
               onSubmit={handleSubmit}
               className="max-w-lg mx-auto flex flex-col sm:flex-row gap-3"
@@ -117,6 +145,7 @@ export default function ChecklistMagnet({
                 {submitting ? "Wird gesendet..." : "Checkliste gratis holen"}
               </button>
             </form>
+            </>
           )}
           <p className="text-[11px] text-blue-200/60 mt-4">
             Unverbindlich · keine Vorauszahlung · jederzeit abbestellbar.
