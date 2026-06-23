@@ -4,6 +4,9 @@ import {
   buildChecklistEmail,
   buildChecklistAdminNotification,
 } from "@/lib/mail/emails";
+import { generateChecklistPdf } from "@/lib/mail/checklist-pdf";
+import { CHECKLIST_PDF_FILENAME } from "@/lib/mail/checklist-data";
+import type { MailAttachment } from "@/lib/mail/smtp";
 
 // nodemailer requires the Node.js runtime (not Edge).
 export const runtime = "nodejs";
@@ -47,9 +50,29 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Generate the PDF attachment. If generation ever fails, fall back to the
+  // HTML/text body (which still contains the full checklist) rather than
+  // failing the whole send — the customer still receives the checklist.
+  let attachments: MailAttachment[] | undefined;
+  try {
+    const pdf = await generateChecklistPdf();
+    attachments = [
+      {
+        filename: CHECKLIST_PDF_FILENAME,
+        content: pdf,
+        contentType: "application/pdf",
+      },
+    ];
+  } catch (err) {
+    console.error(
+      "[Clean24 Checkliste] PDF generation failed — sending without attachment:",
+      err instanceof Error ? err.message : err
+    );
+  }
+
   try {
     const { subject, html, text } = buildChecklistEmail();
-    await sendMail({ to: email, subject, html, text });
+    await sendMail({ to: email, subject, html, text, attachments });
   } catch (err) {
     console.error(
       "[Clean24 Checkliste] Failed to send checklist email:",

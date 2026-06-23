@@ -73,6 +73,12 @@ function getTransport(): Transporter {
   return cachedTransport;
 }
 
+export interface MailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
 export interface SendMailInput {
   to: string | string[];
   subject: string;
@@ -80,6 +86,8 @@ export interface SendMailInput {
   text: string;
   /** Customer address used for Reply-To, e.g. so replies reach the customer. */
   replyTo?: string;
+  /** Optional file attachments (e.g. the checklist PDF). */
+  attachments?: MailAttachment[];
 }
 
 export interface SendMailResult {
@@ -105,6 +113,7 @@ export async function sendMail(input: SendMailInput): Promise<SendMailResult> {
       subject: input.subject,
       text: input.text,
       html: input.html,
+      attachments: input.attachments,
     });
     return { messageId: info.messageId };
   } catch (err) {

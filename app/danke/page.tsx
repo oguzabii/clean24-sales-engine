@@ -26,20 +26,20 @@ export default function DankePage() {
           Vielen Dank für Ihre Anfrage!
         </h1>
         <p className="text-gray-600 mb-3 leading-relaxed">
-          Wir haben Ihre Angaben erhalten und werden diese prüfen. Sie erhalten von uns eine Rückmeldung innerhalb von <strong>2 Stunden</strong> (Werktage).
+          Ihre Anfrage wurde erhalten. Wir haben Ihnen eine <strong>Eingangsbestätigung mit Ihrem Richtpreis</strong> per E-Mail gesendet – bitte prüfen Sie ggf. auch den Spam-Ordner.
         </p>
         <p className="text-gray-600 mb-8 leading-relaxed">
-          Für eine schnellere Bearbeitung können Sie uns gerne <strong>Fotos der Wohnung</strong> via WhatsApp schicken – das hilft uns, einen genauen Preis zu kalkulieren.
+          Clean24 prüft Ihre Angaben und meldet sich anschliessend mit <strong>Fixpreis und Terminvorschlag</strong>. Für eine schnellere Prüfung können Sie uns <strong>Fotos der Wohnung</strong> per WhatsApp senden.
         </p>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
           <h2 className="font-semibold text-gray-900 mb-4">So geht es weiter</h2>
           <div className="space-y-3 text-left">
             {[
-              { step: "1", text: "Wir prüfen Ihre Angaben und bereiten einen verbindlichen Preis vor." },
-              { step: "2", text: "Sie erhalten eine Bestätigung per E-Mail oder Telefon." },
-              { step: "3", text: "Wir vereinbaren gemeinsam Datum und Uhrzeit der Reinigung." },
-              { step: "4", text: "Unser Team erscheint pünktlich und reinigt Ihre Wohnung professionell." },
+              { step: "1", text: "Eingangsbestätigung und Richtpreis per E-Mail." },
+              { step: "2", text: "Prüfung Ihrer Angaben durch Clean24." },
+              { step: "3", text: "Rückmeldung mit Fixpreis und Terminvorschlag." },
+              { step: "4", text: "Reinigung mit Abgabegarantie nach Terminbestätigung." },
             ].map((item) => (
               <div key={item.step} className="flex items-start gap-3">
                 <span className="w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">

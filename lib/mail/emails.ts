@@ -7,12 +7,47 @@
  */
 import { COMPANY, ADDONS_BY_KEY, APARTMENT_SIZE_LABELS } from "@/lib/constants";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { CHECKLIST_SECTIONS, CHECKLIST_PDF_FILENAME } from "./checklist-data";
 import type { LeadPayload } from "@/lib/lead-payload";
 
 export interface EmailContent {
   subject: string;
   html: string;
   text: string;
+}
+
+/** Delivery status of the outbound Lead Autopilot webhook (for the admin email). */
+export type WebhookDeliveryStatus = "delivered" | "failed" | "not_configured";
+
+/** Delivery status of the customer confirmation email (for the admin email). */
+export type CustomerEmailDeliveryStatus =
+  | "sent"
+  | "failed"
+  | "not_configured"
+  | "no_email";
+
+function webhookStatusLabel(status: WebhookDeliveryStatus): string {
+  switch (status) {
+    case "delivered":
+      return "erfolgreich übermittelt";
+    case "failed":
+      return "Fehler beim Senden";
+    case "not_configured":
+      return "nicht konfiguriert";
+  }
+}
+
+function customerEmailStatusLabel(status: CustomerEmailDeliveryStatus): string {
+  switch (status) {
+    case "sent":
+      return "gesendet";
+    case "failed":
+      return "Fehler beim Senden";
+    case "not_configured":
+      return "nicht konfiguriert";
+    case "no_email":
+      return "keine E-Mail-Adresse";
+  }
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? `https://${COMPANY.website}`;
@@ -112,7 +147,13 @@ function wrapHtml(opts: {
 /* 1. Admin notification for a website lead                           */
 /* ------------------------------------------------------------------ */
 
-export function buildLeadNotificationEmail(payload: LeadPayload): EmailContent {
+export function buildLeadNotificationEmail(
+  payload: LeadPayload,
+  meta?: {
+    webhookStatus: WebhookDeliveryStatus;
+    customerEmailStatus?: CustomerEmailDeliveryStatus;
+  }
+): EmailContent {
   const subject = "Neue Anfrage über clean-24.ch";
 
   const sizeLabel =
@@ -148,6 +189,17 @@ export function buildLeadNotificationEmail(payload: LeadPayload): EmailContent {
     ["Seite", payload.page_path],
     ["Eingegangen", formatDateTime(payload.created_at)],
   ];
+
+  // Delivery status of the outbound channels (only when the route passes it).
+  if (meta) {
+    rows.push(["Lead Autopilot", webhookStatusLabel(meta.webhookStatus)]);
+    if (meta.customerEmailStatus) {
+      rows.push([
+        "Kundenbestätigung",
+        customerEmailStatusLabel(meta.customerEmailStatus),
+      ]);
+    }
+  }
 
   const presentRows = rows.filter(
     (r): r is [string, string] => r[1] != null && String(r[1]).trim() !== ""
@@ -201,82 +253,12 @@ export function buildLeadNotificationEmail(payload: LeadPayload): EmailContent {
 /* 2. Checklist email to the customer                                 */
 /* ------------------------------------------------------------------ */
 
-interface ChecklistSection {
-  title: string;
-  items: string[];
-}
-
-/** Wohnungsabgabe checklist content delivered to the customer by email. */
-const CHECKLIST: ChecklistSection[] = [
-  {
-    title: "Küche / Backofen",
-    items: [
-      "Backofen innen inkl. Bleche und Roste entfettet",
-      "Herd, Glaskeramik und Dampfabzug gereinigt",
-      "Kühl- und Gefrierschrank abgetaut, innen und aussen ausgewischt",
-      "Schränke innen und aussen, Griffe und Sockel gereinigt",
-      "Spüle und Armatur entkalkt und poliert",
-      "Wandplättchen und Spritzschutz entfettet",
-    ],
-  },
-  {
-    title: "Bad / WC",
-    items: [
-      "Dusche, Badewanne und Armaturen entkalkt",
-      "WC innen und aussen gründlich gereinigt und desinfiziert",
-      "Spiegel und Glasflächen streifenfrei geputzt",
-      "Plättchen und Fugen gereinigt",
-      "Lüftung / Ventilator entstaubt",
-      "Abläufe frei und sauber",
-    ],
-  },
-  {
-    title: "Fenster / Rahmen / Storen",
-    items: [
-      "Fenster innen und aussen streifenfrei geputzt",
-      "Rahmen und Falze ausgewischt",
-      "Fenstersimse und -bretter gereinigt",
-      "Rollläden, Storen und Lamellen abgestaubt und abgewischt",
-    ],
-  },
-  {
-    title: "Böden / Türen / Schalter",
-    items: [
-      "Alle Böden gesaugt und feucht aufgenommen",
-      "Hartnäckige Flecken und Randzonen behandelt",
-      "Türen, Zargen und Griffe abgewischt",
-      "Lichtschalter und Steckdosen gereinigt",
-      "Heizkörper inkl. Rippen entstaubt",
-    ],
-  },
-  {
-    title: "Balkon / Keller",
-    items: [
-      "Balkon / Terrasse gewischt, Geländer abgewischt",
-      "Abläufe von Laub und Schmutz befreit",
-      "Kellerabteil ausgeräumt und gekehrt",
-      "Spinnweben in Ecken und Nebenräumen entfernt",
-    ],
-  },
-  {
-    title: "Vorbereitung vor der Abgabe",
-    items: [
-      "Persönliche Gegenstände vollständig entfernt",
-      "Sämtliche Schlüssel bereitlegen (inkl. Briefkasten und Keller)",
-      "Zählerstände (Strom, Wasser, ggf. Gas) notieren",
-      "Übergabeprotokoll und Mietvertrag bereithalten",
-      "Adressänderung bei Post und Ämtern einrichten",
-      "Bohrlöcher gemäss Mietvertrag fachgerecht verschliessen",
-    ],
-  },
-];
-
 export function buildChecklistEmail(): EmailContent {
   const subject = "Ihre Wohnungsabgabe-Checkliste von Clean24";
   const offerUrl = `${SITE_URL}/#offer`;
   const whatsappUrl = buildWhatsAppUrl();
 
-  const sectionsHtml = CHECKLIST.map(
+  const sectionsHtml = CHECKLIST_SECTIONS.map(
     (section) => `
     <div style="margin:0 0 20px;">
       <div style="font-size:15px;font-weight:700;color:#0f172a;margin:0 0 8px;">${escapeHtml(
@@ -306,6 +288,10 @@ export function buildChecklistEmail(): EmailContent {
       vielen Dank für Ihr Interesse. Mit dieser Checkliste gehen Sie Ihre Wohnungsabgabe
       strukturiert an – Punkt für Punkt, so wie es Verwaltungen bei der Übergabe prüfen.
     </p>
+    <p style="margin:0 0 16px;color:#475569;font-size:13px;">
+      Die vollständige Checkliste ist dieser E-Mail auch als PDF angehängt
+      (<strong>${escapeHtml(CHECKLIST_PDF_FILENAME)}</strong>) – zum Ausdrucken und Abhaken.
+    </p>
     ${sectionsHtml}
     <div style="margin:24px 0 8px;padding:20px;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;text-align:center;">
       <div style="font-size:15px;font-weight:700;color:#0f172a;margin:0 0 6px;">Lieber den Profis überlassen?</div>
@@ -330,7 +316,9 @@ export function buildChecklistEmail(): EmailContent {
     "vielen Dank für Ihr Interesse. Mit dieser Checkliste gehen Sie Ihre",
     "Wohnungsabgabe strukturiert an – so wie es Verwaltungen bei der Übergabe prüfen.",
     "",
-    ...CHECKLIST.flatMap((section) => [
+    `Die vollständige Checkliste ist auch als PDF angehängt (${CHECKLIST_PDF_FILENAME}).`,
+    "",
+    ...CHECKLIST_SECTIONS.flatMap((section) => [
       `${section.title.toUpperCase()}`,
       ...section.items.map((item) => `  [ ] ${item}`),
       "",
@@ -356,7 +344,114 @@ export function buildChecklistEmail(): EmailContent {
 }
 
 /* ------------------------------------------------------------------ */
-/* 3. Optional internal notification for a checklist request          */
+/* 3. Customer confirmation email (after main form submission)        */
+/* ------------------------------------------------------------------ */
+
+export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailContent {
+  const subject = "Ihre Anfrage bei Clean24 – Richtpreis erhalten";
+
+  const sizeLabel =
+    APARTMENT_SIZE_LABELS[payload.apartment_size] ?? payload.apartment_size;
+  const addonLabels = payload.addons
+    .filter((key) => key !== "express")
+    .map((key) => ADDONS_BY_KEY[key]?.label ?? key);
+
+  const greeting = payload.customer_name
+    ? `Guten Tag ${payload.customer_name},`
+    : "Guten Tag,";
+  const priceText = `CHF ${payload.estimated_price_min} – CHF ${payload.estimated_price_max}`;
+  const whatsappUrl = buildWhatsAppUrl(
+    "Guten Tag, ich sende Ihnen gerne Fotos meiner Wohnung für die Umzugsreinigung."
+  );
+
+  const rows: [string, string | null | undefined][] = [
+    ["Wohnung / Zimmer", sizeLabel],
+    ["Ort / PLZ", [payload.zip, payload.city].filter(Boolean).join(" ")],
+    ["Reinigungsdatum", formatDate(payload.cleaning_date)],
+    ["Abgabetermin", formatDate(payload.handover_date)],
+    ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : null],
+    ["Express", payload.express ? "Ja (+15%)" : null],
+  ];
+  const presentRows = rows.filter(
+    (r): r is [string, string] => r[1] != null && String(r[1]).trim() !== ""
+  );
+  const rowsHtml = presentRows
+    .map(
+      ([label, value]) => `
+      <tr>
+        <td style="padding:7px 12px;border-bottom:1px solid #f1f5f9;color:#6b7280;font-size:13px;white-space:nowrap;">${escapeHtml(
+          label
+        )}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid #f1f5f9;color:#111827;font-size:14px;font-weight:500;">${escapeHtml(
+          String(value)
+        )}</td>
+      </tr>`
+    )
+    .join("");
+
+  const bodyHtml = `
+    <p style="margin:0 0 14px;color:#374151;font-size:14px;">${escapeHtml(greeting)}</p>
+    <p style="margin:0 0 18px;color:#374151;font-size:14px;">
+      vielen Dank für Ihre Anfrage über clean-24.ch. Wir haben Ihre Angaben erhalten und
+      melden uns nach kurzer Prüfung persönlich bei Ihnen.
+    </p>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #f1f5f9;border-radius:8px;overflow:hidden;">
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <div style="margin:18px 0;padding:18px;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;text-align:center;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:#2563eb;font-weight:600;">Ihr Richtpreis</div>
+      <div style="font-size:22px;font-weight:700;color:#0f172a;margin-top:4px;">${escapeHtml(
+        priceText
+      )}</div>
+    </div>
+    <p style="margin:0 0 18px;color:#475569;font-size:13px;line-height:1.6;">
+      Der Richtpreis ist unverbindlich. Nach Prüfung Ihrer Angaben erhalten Sie eine klare
+      Rückmeldung mit Fixpreis und Terminvorschlag.
+    </p>
+    <div style="padding:18px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;">
+      <p style="margin:0 0 8px;color:#166534;font-size:14px;font-weight:600;">Schneller zum Fixpreis</p>
+      <p style="margin:0 0 14px;color:#374151;font-size:13px;">
+        Für eine schnellere Prüfung können Sie uns 3–5 Fotos der Wohnung per WhatsApp senden.
+      </p>
+      <a href="${whatsappUrl}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 22px;border-radius:10px;">
+        Fotos per WhatsApp senden
+      </a>
+    </div>`;
+
+  const text = [
+    "Ihre Anfrage bei Clean24 – Richtpreis erhalten",
+    "",
+    greeting,
+    "",
+    "vielen Dank für Ihre Anfrage über clean-24.ch. Wir haben Ihre Angaben erhalten",
+    "und melden uns nach kurzer Prüfung persönlich bei Ihnen.",
+    "",
+    ...presentRows.map(([label, value]) => `${label}: ${value}`),
+    "",
+    `Ihr Richtpreis: ${priceText}`,
+    "",
+    "Der Richtpreis ist unverbindlich. Nach Prüfung Ihrer Angaben erhalten Sie eine",
+    "klare Rückmeldung mit Fixpreis und Terminvorschlag.",
+    "",
+    "Für eine schnellere Prüfung können Sie uns 3-5 Fotos der Wohnung per WhatsApp senden:",
+    whatsappUrl,
+    "",
+    contactBlockText(),
+  ].join("\n");
+
+  return {
+    subject,
+    html: wrapHtml({
+      previewText: `Ihr Richtpreis: ${priceText} – wir prüfen Ihre Angaben und melden uns mit Fixpreis und Termin.`,
+      heading: "Ihre Anfrage ist eingegangen",
+      bodyHtml,
+    }),
+    text,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* 4. Optional internal notification for a checklist request          */
 /* ------------------------------------------------------------------ */
 
 export function buildChecklistAdminNotification(

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildLeadPayload, type LeadFormData } from "@/lib/lead-payload";
 import { isSmtpConfigured, sendMail } from "@/lib/mail/smtp";
-import { buildLeadNotificationEmail } from "@/lib/mail/emails";
+import {
+  buildLeadNotificationEmail,
+  buildCustomerConfirmationEmail,
+  type WebhookDeliveryStatus,
+  type CustomerEmailDeliveryStatus,
+} from "@/lib/mail/emails";
+import { COMPANY } from "@/lib/constants";
 
 // nodemailer requires the Node.js runtime (not Edge).
 export const runtime = "nodejs";
@@ -78,17 +84,57 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // ---- 2. Internal admin notification email (additive) ---------------
-  // Best-effort: a failure here must not block the customer flow as long as
-  // the webhook succeeded. Only when BOTH channels are configured and BOTH
-  // fail do we surface an error to the client.
-  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
-  const emailConfigured = !!adminEmail && isSmtpConfigured();
-  let emailOk = false;
+  // Map the webhook outcome to a status the admin email can display.
+  const webhookStatus: WebhookDeliveryStatus = !webhookConfigured
+    ? "not_configured"
+    : webhookOk
+      ? "delivered"
+      : "failed";
 
-  if (emailConfigured) {
+  const smtpReady = isSmtpConfigured();
+
+  // ---- 2. Customer confirmation email (additive, best-effort) --------
+  // A failure here must never break the customer flow — we only record the
+  // status so it can be surfaced in the admin notification below.
+  let customerEmailStatus: CustomerEmailDeliveryStatus;
+  if (!smtpReady) {
+    customerEmailStatus = "not_configured";
+  } else if (!payload.email) {
+    customerEmailStatus = "no_email";
+  } else {
     try {
-      const { subject, html, text } = buildLeadNotificationEmail(payload);
+      const { subject, html, text } = buildCustomerConfirmationEmail(payload);
+      await sendMail({
+        to: payload.email,
+        subject,
+        html,
+        text,
+        // Customer replies reach the internal inbox.
+        replyTo: process.env.ADMIN_NOTIFICATION_EMAIL || COMPANY.email,
+      });
+      customerEmailStatus = "sent";
+    } catch (err) {
+      customerEmailStatus = "failed";
+      console.warn(
+        "[Clean24 Lead] Customer confirmation email failed:",
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
+
+  // ---- 3. Internal admin notification email (with delivery status) ---
+  // Best-effort: a failure here must not block the customer flow as long as
+  // the webhook succeeded. It reports the webhook + customer-email outcome.
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  const adminConfigured = !!adminEmail && smtpReady;
+  let adminEmailOk = false;
+
+  if (adminConfigured) {
+    try {
+      const { subject, html, text } = buildLeadNotificationEmail(payload, {
+        webhookStatus,
+        customerEmailStatus,
+      });
       await sendMail({
         to: adminEmail as string,
         subject,
@@ -97,7 +143,7 @@ export async function POST(request: NextRequest) {
         // Replies go straight to the customer when an address is present.
         replyTo: payload.email || undefined,
       });
-      emailOk = true;
+      adminEmailOk = true;
     } catch (err) {
       console.warn(
         "[Clean24 Lead] Admin notification email failed:",
@@ -106,12 +152,13 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // ---- 3. Decide the response ----------------------------------------
-  // Error only when both configured outbound channels failed (the lead would
-  // otherwise be silently lost). If a channel is not configured it is not a
-  // failure — this preserves the legacy behavior where a webhook-only setup
-  // (or local dev with neither configured) still returns success.
-  if (webhookConfigured && emailConfigured && !webhookOk && !emailOk) {
+  // ---- 4. Decide the response ----------------------------------------
+  // Error only when both configured capture channels (webhook + admin email)
+  // failed — the lead would otherwise be silently lost. The customer
+  // confirmation email is a courtesy and never affects this decision. An
+  // unconfigured channel is not a failure (preserves the legacy webhook-only
+  // and local-dev behavior).
+  if (webhookConfigured && adminConfigured && !webhookOk && !adminEmailOk) {
     return NextResponse.json(
       {
         error:
