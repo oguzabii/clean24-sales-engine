@@ -4,6 +4,8 @@ export interface LeadFormData {
   customer_name: string;
   email: string;
   phone: string;
+  /** Street + house number, e.g. "Musterstrasse 12". */
+  address?: string;
   city: string;
   zip: string;
   apartment_size: string;

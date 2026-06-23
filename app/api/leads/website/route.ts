@@ -16,6 +16,7 @@ const REQUIRED_FIELDS: (keyof LeadFormData)[] = [
   "customer_name",
   "email",
   "phone",
+  "address",
   "city",
   "zip",
   "apartment_size",

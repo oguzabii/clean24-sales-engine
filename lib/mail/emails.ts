@@ -163,7 +163,7 @@ export function buildLeadNotificationEmail(
     .filter((key) => key !== "express")
     .map((key) => ADDONS_BY_KEY[key]?.label ?? key);
 
-  const address = (payload as { address?: string }).address;
+  const address = payload.address;
 
   // [label, value] rows; null/empty values are skipped.
   const rows: [string, string | null | undefined][] = [
@@ -366,6 +366,7 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
 
   const rows: [string, string | null | undefined][] = [
     ["Wohnung / Zimmer", sizeLabel],
+    ["Adresse", payload.address],
     ["Ort / PLZ", [payload.zip, payload.city].filter(Boolean).join(" ")],
     ["Reinigungsdatum", formatDate(payload.cleaning_date)],
     ["Abgabetermin", formatDate(payload.handover_date)],
