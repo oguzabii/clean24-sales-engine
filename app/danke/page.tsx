@@ -29,7 +29,7 @@ export default function DankePage() {
           Ihre Anfrage wurde erhalten. Wir haben Ihnen eine <strong>Eingangsbestätigung mit Ihrem Richtpreis</strong> per E-Mail gesendet – bitte prüfen Sie ggf. auch den Spam-Ordner.
         </p>
         <p className="text-gray-600 mb-8 leading-relaxed">
-          Clean24 prüft Ihre Angaben und meldet sich anschliessend mit <strong>Fixpreis und Terminvorschlag</strong>. Für eine schnellere Prüfung können Sie uns <strong>Fotos der Wohnung</strong> per WhatsApp senden.
+          Clean24 prüft Ihre Angaben und meldet sich anschliessend mit <strong>Fixpreis und Terminvorschlag</strong>. <strong>Fotos der Wohnung</strong> oder Ihre Abgabeliste können Sie uns ergänzend per WhatsApp senden.
         </p>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">

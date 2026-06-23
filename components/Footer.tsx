@@ -6,16 +6,20 @@ export default function Footer() {
     <footer className="bg-gray-900 text-gray-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 items-start">
-          {/* Brand: footer-safe white-silhouette logo on dark background. */}
+          {/* Brand: real full-colour Clean24 logo on a deliberate light card so
+              the brand colours read on the dark footer — an intentional badge,
+              not an accidental white image background. */}
           <div>
-            <Image
-              src="/clean24-logo-light.png"
-              alt="Clean24"
-              width={1380}
-              height={671}
-              className="h-12 md:h-14 w-auto select-none"
-              draggable={false}
-            />
+            <span className="inline-flex items-center rounded-2xl bg-white px-5 py-3 shadow-sm ring-1 ring-black/5">
+              <Image
+                src="/clean24-logo.png"
+                alt="Clean24 – Ihr Reinigungsprofi"
+                width={1380}
+                height={671}
+                className="h-11 md:h-12 w-auto select-none"
+                draggable={false}
+              />
+            </span>
             <p className="text-sm leading-relaxed max-w-md mt-5">
               Professionelle Umzugsreinigung mit Abgabegarantie. Einsätze in der ganzen Schweiz
               nach Verfügbarkeit.

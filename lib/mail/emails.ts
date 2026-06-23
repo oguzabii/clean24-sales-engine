@@ -410,9 +410,9 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
       Rückmeldung mit Fixpreis und Terminvorschlag.
     </p>
     <div style="padding:18px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;">
-      <p style="margin:0 0 8px;color:#166534;font-size:14px;font-weight:600;">Schneller zum Fixpreis</p>
+      <p style="margin:0 0 8px;color:#166534;font-size:14px;font-weight:600;">Fotos &amp; Abgabeliste ergänzen</p>
       <p style="margin:0 0 14px;color:#374151;font-size:13px;">
-        Für eine schnellere Prüfung können Sie uns 3–5 Fotos der Wohnung per WhatsApp senden.
+        Fotos der Wohnung oder Ihre Abgabeliste können Sie uns ergänzend per WhatsApp senden – oder uns einfach eine Frage stellen.
       </p>
       <a href="${whatsappUrl}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 22px;border-radius:10px;">
         Fotos per WhatsApp senden
@@ -434,7 +434,7 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     "Der Richtpreis ist unverbindlich. Nach Prüfung Ihrer Angaben erhalten Sie eine",
     "klare Rückmeldung mit Fixpreis und Terminvorschlag.",
     "",
-    "Für eine schnellere Prüfung können Sie uns 3-5 Fotos der Wohnung per WhatsApp senden:",
+    "Fotos der Wohnung oder Ihre Abgabeliste können Sie uns ergänzend per WhatsApp senden:",
     whatsappUrl,
     "",
     contactBlockText(),
