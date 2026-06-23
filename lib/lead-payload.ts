@@ -17,6 +17,8 @@ export interface LeadFormData {
   addons?: Record<string, boolean>;
   express?: boolean;
   notes?: string;
+  /** Optional discount / Rabattcode entered by the customer. */
+  discount_code?: string;
   page_path?: string;
   utm_source?: string;
   utm_medium?: string;
@@ -31,6 +33,12 @@ export interface LeadPayload extends Omit<LeadFormData, "addons" | "express"> {
   express: boolean;
   estimated_price_min: number;
   estimated_price_max: number;
+  /** Discount metadata — set only when a valid Rabattcode was applied. */
+  discount_type?: "percent" | "fixed_chf" | null;
+  discount_value?: number | null;
+  /** Pre-discount Richtpreis range (set only when a discount was applied). */
+  price_min_original?: number | null;
+  price_max_original?: number | null;
   created_at: string;
 }
 

@@ -8,6 +8,8 @@ import {
   type CustomerEmailDeliveryStatus,
 } from "@/lib/mail/emails";
 import { COMPANY } from "@/lib/constants";
+import { validateDiscountCode } from "@/lib/discount-validate";
+import { applyDiscountToRange } from "@/lib/discount";
 
 // nodemailer requires the Node.js runtime (not Edge).
 export const runtime = "nodejs";
@@ -42,11 +44,36 @@ export async function POST(request: NextRequest) {
 
   const data = body as LeadFormData;
 
-  const payload = buildLeadPayload({
+  let payload = buildLeadPayload({
     ...data,
     addons: data.addons ?? {},
     express: data.express ?? false,
   });
+
+  // ---- Discount / Rabattcode (validated server-side via Lead Autopilot) ----
+  // Base pricing is never changed; a valid code only reduces the displayed
+  // Richtpreis range. Invalid/unknown codes are silently ignored so the
+  // no-code flow stays identical.
+  const submittedCode = (data.discount_code ?? "").trim();
+  const discount = submittedCode ? await validateDiscountCode(submittedCode) : null;
+  if (discount) {
+    const origMin = payload.estimated_price_min;
+    const origMax = payload.estimated_price_max;
+    const ranged = applyDiscountToRange(origMin, origMax, discount);
+    payload = {
+      ...payload,
+      discount_code: discount.code,
+      discount_type: discount.type,
+      discount_value: discount.value,
+      price_min_original: origMin,
+      price_max_original: origMax,
+      estimated_price_min: ranged.min,
+      estimated_price_max: ranged.max,
+    };
+  } else {
+    // No valid discount → never carry a stale/invalid code forward.
+    payload = { ...payload, discount_code: undefined };
+  }
 
   if (process.env.NODE_ENV === "development") {
     console.log("[Clean24 Lead]", JSON.stringify(payload, null, 2));

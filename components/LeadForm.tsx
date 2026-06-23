@@ -33,6 +33,48 @@ export default function LeadForm({
     ...prefilledData,
   });
 
+  // Optional Rabattcode — validated server-side via the Autopilot API.
+  const [discountCode, setDiscountCode] = useState("");
+  const [discount, setDiscount] = useState<{
+    code: string;
+    label: string;
+    priceMin?: number;
+    priceMax?: number;
+  } | null>(null);
+  const [discountChecking, setDiscountChecking] = useState(false);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+
+  const applyDiscount = async () => {
+    const code = discountCode.trim();
+    if (!code) return;
+    setDiscountChecking(true);
+    setDiscountError(null);
+    try {
+      const res = await fetch("/api/discount/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, price_min: estimatedMin, price_max: estimatedMax }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data?.valid) {
+        setDiscount({
+          code: data.code,
+          label: data.label,
+          priceMin: data.price_min,
+          priceMax: data.price_max,
+        });
+      } else {
+        setDiscount(null);
+        setDiscountError("Code ungültig oder abgelaufen.");
+      }
+    } catch {
+      setDiscount(null);
+      setDiscountError("Prüfung fehlgeschlagen. Bitte später erneut versuchen.");
+    } finally {
+      setDiscountChecking(false);
+    }
+  };
+
   const updateField = (key: keyof FormState, value: string | boolean | Record<string, boolean>) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -50,6 +92,7 @@ export default function LeadForm({
 
       const payload = {
         ...form,
+        discount_code: discountCode.trim() || undefined,
         page_path: pagePath ?? (typeof window !== "undefined" ? window.location.pathname : "/"),
         utm_source: utmParams.utm_source,
         utm_medium: utmParams.utm_medium,
@@ -78,7 +121,24 @@ export default function LeadForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {estimatedMin && estimatedMax && (
         <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-700">
-          Ihr Richtpreis: <strong>CHF {estimatedMin} – CHF {estimatedMax}</strong>
+          {discount && discount.priceMin != null && discount.priceMax != null ? (
+            <>
+              Ihr Richtpreis:{" "}
+              <span className="line-through text-blue-400">
+                CHF {estimatedMin} – CHF {estimatedMax}
+              </span>{" "}
+              <strong>
+                CHF {discount.priceMin} – CHF {discount.priceMax}
+              </strong>
+              <span className="block text-xs text-green-600 mt-0.5">
+                Rabatt {discount.code} (−{discount.label}) angewendet.
+              </span>
+            </>
+          ) : (
+            <>
+              Ihr Richtpreis: <strong>CHF {estimatedMin} – CHF {estimatedMax}</strong>
+            </>
+          )}
           <span className="block text-xs text-blue-400 mt-0.5">
             Wird nach Prüfung Ihrer Angaben bestätigt.
           </span>
@@ -244,6 +304,40 @@ export default function LeadForm({
           placeholder="Besonderheiten, spezielle Wünsche, Fragen..."
           className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Rabattcode (optional)
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={discountCode}
+            onChange={(e) => {
+              setDiscountCode(e.target.value);
+              setDiscount(null);
+              setDiscountError(null);
+            }}
+            placeholder="z.B. SOMMER10"
+            className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="button"
+            onClick={applyDiscount}
+            disabled={discountChecking || !discountCode.trim()}
+            className="border border-gray-200 text-gray-700 hover:text-blue-600 disabled:opacity-50 font-semibold px-5 rounded-xl transition-colors whitespace-nowrap"
+          >
+            {discountChecking ? "Prüfen..." : "Anwenden"}
+          </button>
+        </div>
+        {discount ? (
+          <p className="mt-1 text-xs text-green-600">
+            Rabatt {discount.code} (−{discount.label}) angewendet.
+          </p>
+        ) : discountError ? (
+          <p className="mt-1 text-xs text-red-600">{discountError}</p>
+        ) : null}
       </div>
 
       {error && (

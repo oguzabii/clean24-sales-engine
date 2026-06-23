@@ -82,6 +82,28 @@ function formatDateTime(iso: string): string {
   }
 }
 
+/** Discount info for the emails — null when no valid Rabattcode was applied. */
+function discountSummary(
+  payload: LeadPayload
+): { code: string; label: string; original: string | null } | null {
+  if (
+    !payload.discount_code ||
+    (payload.discount_type !== "percent" && payload.discount_type !== "fixed_chf") ||
+    payload.discount_value == null
+  ) {
+    return null;
+  }
+  const label =
+    payload.discount_type === "percent"
+      ? `${payload.discount_value}%`
+      : `CHF ${payload.discount_value}`;
+  const original =
+    payload.price_min_original != null && payload.price_max_original != null
+      ? `CHF ${payload.price_min_original} – CHF ${payload.price_max_original}`
+      : null;
+  return { code: payload.discount_code, label, original };
+}
+
 function contactBlockHtml(): string {
   return `
     <div style="font-weight:600;color:#374151;">${escapeHtml(COMPANY.name)}</div>
@@ -189,6 +211,12 @@ export function buildLeadNotificationEmail(
     ["Seite", payload.page_path],
     ["Eingegangen", formatDateTime(payload.created_at)],
   ];
+
+  const discount = discountSummary(payload);
+  if (discount) {
+    rows.push(["Rabattcode", `${discount.code} (−${discount.label})`]);
+    if (discount.original) rows.push(["Richtpreis ohne Rabatt", discount.original]);
+  }
 
   // Delivery status of the outbound channels (only when the route passes it).
   if (meta) {
@@ -360,6 +388,7 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     ? `Guten Tag ${payload.customer_name},`
     : "Guten Tag,";
   const priceText = `CHF ${payload.estimated_price_min} – CHF ${payload.estimated_price_max}`;
+  const discount = discountSummary(payload);
   const whatsappUrl = buildWhatsAppUrl(
     "Guten Tag, ich sende Ihnen gerne Fotos meiner Wohnung für die Umzugsreinigung."
   );
@@ -372,6 +401,7 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     ["Abgabetermin", formatDate(payload.handover_date)],
     ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : null],
     ["Express", payload.express ? "Ja (+15%)" : null],
+    ["Rabattcode", discount ? `${discount.code} (−${discount.label})` : null],
   ];
   const presentRows = rows.filter(
     (r): r is [string, string] => r[1] != null && String(r[1]).trim() !== ""
@@ -401,9 +431,23 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     </table>
     <div style="margin:18px 0;padding:18px;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;text-align:center;">
       <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:#2563eb;font-weight:600;">Ihr Richtpreis</div>
+      ${
+        discount && discount.original
+          ? `<div style="font-size:13px;color:#94a3b8;text-decoration:line-through;margin-top:2px;">${escapeHtml(
+              discount.original
+            )}</div>`
+          : ""
+      }
       <div style="font-size:22px;font-weight:700;color:#0f172a;margin-top:4px;">${escapeHtml(
         priceText
       )}</div>
+      ${
+        discount
+          ? `<div style="margin-top:6px;font-size:12px;font-weight:600;color:#16a34a;">Rabatt ${escapeHtml(
+              discount.code
+            )} (−${escapeHtml(discount.label)}) angewendet</div>`
+          : ""
+      }
     </div>
     <p style="margin:0 0 18px;color:#475569;font-size:13px;line-height:1.6;">
       Der Richtpreis ist unverbindlich. Nach Prüfung Ihrer Angaben erhalten Sie eine klare
@@ -430,6 +474,12 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     ...presentRows.map(([label, value]) => `${label}: ${value}`),
     "",
     `Ihr Richtpreis: ${priceText}`,
+    ...(discount
+      ? [
+          ...(discount.original ? [`(statt ${discount.original})`] : []),
+          `Rabatt ${discount.code} (−${discount.label}) angewendet.`,
+        ]
+      : []),
     "",
     "Der Richtpreis ist unverbindlich. Nach Prüfung Ihrer Angaben erhalten Sie eine",
     "klare Rückmeldung mit Fixpreis und Terminvorschlag.",
