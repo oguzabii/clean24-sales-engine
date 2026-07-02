@@ -8,15 +8,16 @@ interface AddOnSelectorProps {
 /**
  * Add-on selection step.
  *
- * Each add-on shows its fixed CHF surcharge (incl. 8.1% MwSt.); prices live in
- * `lib/constants.ts` and the calculation in `lib/pricing.ts`.
+ * Per-add-on CHF prices are intentionally NOT shown on the selection cards —
+ * the fixed surcharges (lib/constants.ts) still apply via lib/pricing.ts, and
+ * the customer sees the effect only in the Richtpreis range / summary.
  */
 export default function AddOnSelector({ values, onChange }: AddOnSelectorProps) {
   return (
     <div className="space-y-3">
       {ADDONS.map((addon) => {
         const active = !!values[addon.key];
-        const trailingLabel = `+ CHF ${addon.price.toLocaleString("de-CH")}`;
+        const trailingLabel = "Optional";
         return (
           <label
             key={addon.key}
