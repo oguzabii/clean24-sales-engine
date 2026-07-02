@@ -1,4 +1,5 @@
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { OfferScrollLink } from "@/components/OfferScrollLink";
 
 const MESSAGE =
   "Guten Tag, ich möchte gerne Fotos meiner Wohnung für eine Ersteinschätzung senden. Können Sie mir kurz bestätigen, dass ich die Bilder hier senden kann? Danke!";
@@ -47,12 +48,12 @@ export default function WhatsAppPhotoOffer() {
                   </svg>
                   Fotos per WhatsApp senden
                 </a>
-                <a
+                <OfferScrollLink
                   href="#offer"
                   className="inline-flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-blue-300 text-gray-700 font-semibold px-7 py-3.5 rounded-xl transition-colors"
                 >
                   Richtpreis berechnen
-                </a>
+                </OfferScrollLink>
               </div>
             </div>
 

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { OfferScrollLink } from "@/components/OfferScrollLink";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { COMPANY } from "@/lib/constants";
 
@@ -28,7 +28,7 @@ export default function CTASection({
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           {showCalculator && (
-            <Link
+            <OfferScrollLink
               href="/umzugsreinigung#offer"
               className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-colors w-full sm:w-auto justify-center"
             >
@@ -36,7 +36,7 @@ export default function CTASection({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               Richtpreis berechnen
-            </Link>
+            </OfferScrollLink>
           )}
           {showWhatsApp && (
             <a

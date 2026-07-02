@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { OfferScrollLink } from "@/components/OfferScrollLink";
 import OfferStart from "@/components/OfferStart";
 import FAQ from "@/components/FAQ";
 import ProcessSteps from "@/components/ProcessSteps";
@@ -59,7 +59,7 @@ export default function UmzugsreinigungPageContent() {
               </p>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-3">
-                <Link
+                <OfferScrollLink
                   href="#offer"
                   className="group inline-flex items-center justify-center gap-3 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 text-white font-bold text-base md:text-lg px-9 py-5 rounded-2xl transition-all shadow-[0_18px_40px_-12px_rgba(37,99,235,0.55)] hover:shadow-[0_22px_48px_-12px_rgba(59,130,246,0.7)] hover:-translate-y-0.5 ring-1 ring-white/15"
                 >
@@ -73,13 +73,13 @@ export default function UmzugsreinigungPageContent() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
-                </Link>
-                <Link
+                </OfferScrollLink>
+                <OfferScrollLink
                   href="#offer"
                   className="inline-flex items-center justify-center gap-2 text-blue-200 hover:text-white font-medium text-sm transition-colors underline decoration-blue-400/50 underline-offset-4 hover:decoration-white"
                 >
                   Richtpreis in 60 Sekunden berechnen
-                </Link>
+                </OfferScrollLink>
               </div>
               <p className="text-xs text-blue-200/70 mb-8 max-w-md leading-relaxed">
                 In 60 Sekunden Anfrage starten · Richtpreis berechnen und Offerte anfragen ·
@@ -140,7 +140,7 @@ export default function UmzugsreinigungPageContent() {
                       <span className="c24-live-dot" />
                       Unverbindliche Anfrage
                     </div>
-                    <Link
+                    <OfferScrollLink
                       href="#offer"
                       className="text-xs font-semibold text-blue-300 hover:text-white whitespace-nowrap inline-flex items-center gap-1"
                     >
@@ -148,7 +148,7 @@ export default function UmzugsreinigungPageContent() {
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
-                    </Link>
+                    </OfferScrollLink>
                   </div>
                   <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] text-blue-100/85">
                     {[

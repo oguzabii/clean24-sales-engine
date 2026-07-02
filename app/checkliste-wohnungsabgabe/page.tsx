@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { OfferScrollLink } from "@/components/OfferScrollLink";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import ChecklistMagnet, { type ChecklistSection } from "@/components/ChecklistMagnet";
 
@@ -88,12 +88,12 @@ export default function ChecklistePage() {
             Übergabetermin. Starten Sie jetzt eine unverbindliche Anfrage.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
+            <OfferScrollLink
               href="/#offer"
               className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-colors"
             >
               Kostenlose Offerte erhalten
-            </Link>
+            </OfferScrollLink>
             <WhatsAppButton variant="secondary" />
           </div>
         </div>

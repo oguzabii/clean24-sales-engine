@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { OfferScrollLink } from "@/components/OfferScrollLink";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 /**
@@ -10,7 +10,7 @@ export default function StickyMobileCTA() {
     <div className="md:hidden fixed bottom-0 inset-x-0 z-40">
       <div className="c24-sticky-cta bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <div className="grid grid-cols-2 gap-2 px-3 pt-2.5">
-          <Link
+          <OfferScrollLink
             href="#offer"
             className="inline-flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-3 rounded-xl"
           >
@@ -18,7 +18,7 @@ export default function StickyMobileCTA() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
             Offerte erhalten
-          </Link>
+          </OfferScrollLink>
           <a
             href={buildWhatsAppUrl()}
             target="_blank"
