@@ -10,13 +10,14 @@ export const COMPANY = {
   mwst: "CHE-260.909.323",
 } as const;
 
+/** Base prices per apartment size, incl. 8.1% MwSt. */
 export const BASE_PRICES: Record<string, number> = {
-  "1-1.5": 590,
-  "2.5": 690,
-  "3.5": 890,
-  "4.5": 990,
-  "5.5": 1050,
-  "6.5+": 1250,
+  "1-1.5": 750,
+  "2.5": 880,
+  "3.5": 1150,
+  "4.5": 1290,
+  "5.5": 1360,
+  "6.5+": 1630,
 };
 
 export const APARTMENT_SIZE_LABELS: Record<string, string> = {
@@ -29,18 +30,13 @@ export const APARTMENT_SIZE_LABELS: Record<string, string> = {
 };
 
 /**
- * Add-on catalogue.
- *
- * `isFromPrice = true` means the displayed price acts as an "ab CHF X" starting
- * value (the calculator still uses it as a minimum surcharge — final price is
- * confirmed after Prüfung).
+ * Add-on catalogue. Fixed surcharges, incl. 8.1% MwSt.
  */
 export interface AddOn {
   key: string;
   label: string;
   description: string;
   price: number;
-  isFromPrice?: boolean;
 }
 
 export const ADDONS: AddOn[] = [
@@ -54,40 +50,37 @@ export const ADDONS: AddOn[] = [
     key: "limescale_heavy",
     label: "Starke Kalkablagerungen / Spezial-Entkalkung",
     description: "Bei sehr hartem Wasser oder stark verkalkten Bereichen.",
-    price: 120,
+    price: 150,
   },
   {
     key: "smoker",
     label: "Raucherwohnung / Nikotinrückstände",
     description: "Spezialbehandlung bei Nikotinverfärbungen und Geruchsrückständen.",
-    price: 180,
+    price: 390,
   },
   {
     key: "pet",
     label: "Haustier-Spezialreinigung",
     description: "Entfernung von Tierhaaren und Geruch in normalem Ausmass.",
-    price: 90,
+    price: 200,
   },
   {
     key: "carpet",
     label: "Teppich- oder Spannteppichreinigung",
     description: "Tiefenreinigung von Teppichböden, Preis je nach Fläche.",
     price: 120,
-    isFromPrice: true,
   },
   {
     key: "large_cellar",
     label: "Grosser Keller / Hobbyraum / Nebenraum",
     description: "Für überdurchschnittlich grosse oder zusätzliche Nebenräume.",
-    price: 120,
-    isFromPrice: true,
+    price: 100,
   },
   {
     key: "wintergarden",
     label: "Wintergarten / sehr viele Fensterflächen",
     description: "Bei überdurchschnittlich vielen Fensterflächen oder Wintergarten.",
-    price: 150,
-    isFromPrice: true,
+    price: 250,
   },
 ];
 

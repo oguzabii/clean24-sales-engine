@@ -99,6 +99,7 @@ export default function PriceCalculator() {
         </div>
         <p className="text-xs text-blue-200/90 mt-3 leading-relaxed">
           Richtpreis, unverbindlich. Der genaue Preis wird nach Prüfung Ihrer Angaben bestätigt.
+          Alle Preise inkl. 8.1% MwSt.
         </p>
       </div>
 

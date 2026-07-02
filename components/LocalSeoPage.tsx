@@ -21,7 +21,7 @@ export default function LocalSeoPage({ city, slug, headline, intro }: LocalSeoPa
     },
     {
       question: `Was kostet eine Umzugsreinigung in ${city}?`,
-      answer: `Der Preis hängt von der Wohnungsgrösse und den gewünschten Zusatzleistungen ab. Startpreise: 1–1.5 Zimmer ab CHF 590, 2.5 Zimmer ab CHF 690, 3.5 Zimmer ab CHF 890, 4.5 Zimmer ab CHF 990. Berechnen Sie Ihren Richtpreis in 60 Sekunden.`,
+      answer: `Der Preis hängt von der Wohnungsgrösse und den gewünschten Zusatzleistungen ab. Startpreise: 1–1.5 Zimmer ab CHF 750, 2.5 Zimmer ab CHF 880, 3.5 Zimmer ab CHF 1'150, 4.5 Zimmer ab CHF 1'290. Alle Preise inkl. 8.1% MwSt. Berechnen Sie Ihren Richtpreis in 60 Sekunden.`,
     },
     {
       question: "Gilt die Abgabegarantie auch wenn der Vermieter streng ist?",

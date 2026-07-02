@@ -64,21 +64,26 @@ clean24-sales-engine/
 
 ## Pricing Rules
 
-Base prices (ab = starting from):
-| Zimmer | CHF |
-|--------|-----|
-| 1–1.5  | 590 |
-| 2.5    | 690 |
-| 3.5    | 890 |
-| 4.5    | 990 |
-| 5.5    | 1050|
-| 6.5+   | 1250|
+All prices incl. 8.1% MwSt. ("Alle Preise inkl. 8.1% MwSt.").
 
-Add-ons:
-- Balkon: +80
-- Keller: +80
-- Backofen Tiefenreinigung: +60
-- Lamellen/Jalousien: +120
+Base prices (ab = starting from):
+| Zimmer | CHF  |
+|--------|------|
+| 1–1.5  | 750  |
+| 2.5    | 880  |
+| 3.5    | 1150 |
+| 4.5    | 1290 |
+| 5.5    | 1360 |
+| 6.5+   | 1630 |
+
+Add-ons (fixed surcharges):
+- Hochdruckreinigung Terrasse / Aussenbereich: +200
+- Starke Kalkablagerungen / Spezial-Entkalkung: +150
+- Raucherwohnung / Nikotinrückstände: +390
+- Haustier-Spezialreinigung: +200
+- Teppich- oder Spannteppichreinigung: +120
+- Grosser Keller / Hobbyraum / Nebenraum: +100
+- Wintergarten / sehr viele Fensterflächen: +250
 - Express: +15% on subtotal
 
 Price range displayed = [subtotal, subtotal × 1.1] rounded to nearest 10.

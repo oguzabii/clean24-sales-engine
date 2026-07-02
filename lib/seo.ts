@@ -70,7 +70,7 @@ export const LOCAL_SEO_PAGES = {
     slug: "umzugsreinigung-schlieren",
     title: "Umzugsreinigung Schlieren mit Abgabegarantie | Clean24",
     description:
-      "Professionelle Umzugsreinigung in Schlieren. Mit Abgabegarantie und fairen Preisen ab CHF 590. Jetzt Richtpreis berechnen.",
+      "Professionelle Umzugsreinigung in Schlieren. Mit Abgabegarantie und fairen Preisen ab CHF 750 inkl. MwSt. Jetzt Richtpreis berechnen.",
     intro:
       "Schlieren ist eine lebendige Stadt im Limmattal mit hoher Umzugsfrequenz. Clean24 bietet Ihnen in Schlieren eine professionelle Umzugsreinigung mit Abgabegarantie – schnell, sauber und zum fairen Preis.",
     keywords: [
