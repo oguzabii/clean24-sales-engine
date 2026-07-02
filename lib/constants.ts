@@ -5,7 +5,7 @@ export const COMPANY = {
   email: "info@clean-24.ch",
   phone: "+41 44 516 19 23",
   phoneDisplay: "+41 44 516 19 23",
-  whatsapp: "+41764251923",
+  whatsapp: "+41766080055",
   website: "www.clean-24.ch",
   mwst: "CHE-260.909.323",
 } as const;
