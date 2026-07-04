@@ -81,6 +81,13 @@ export default function LeadForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Abgabezeit only makes sense together with an Abgabetermin.
+    if ((form.handover_time ?? "").trim() && !(form.handover_date ?? "").trim()) {
+      setError("Bitte wählen Sie zuerst einen Abgabetermin aus.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -92,6 +99,7 @@ export default function LeadForm({
 
       const payload = {
         ...form,
+        handover_time: (form.handover_time ?? "").trim() || undefined,
         discount_code: discountCode.trim() || undefined,
         page_path: pagePath ?? (typeof window !== "undefined" ? window.location.pathname : "/"),
         utm_source: utmParams.utm_source,
@@ -238,7 +246,7 @@ export default function LeadForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Reinigungsdatum <span className="text-red-500">*</span>
@@ -263,6 +271,20 @@ export default function LeadForm({
             min={new Date().toISOString().split("T")[0]}
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Abgabezeit (optional)
+          </label>
+          <input
+            type="time"
+            value={form.handover_time ?? ""}
+            onChange={(e) => updateField("handover_time", e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="mt-1 text-xs text-gray-400 leading-snug">
+            Optional – falls die Uhrzeit der Wohnungsabgabe bereits bekannt ist.
+          </p>
         </div>
       </div>
 

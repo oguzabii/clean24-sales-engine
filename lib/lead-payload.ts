@@ -12,6 +12,8 @@ export interface LeadFormData {
   square_meters?: string;
   cleaning_date: string;
   handover_date?: string;
+  /** Optional handover time (HH:MM), only meaningful together with handover_date. */
+  handover_time?: string;
   windows_count?: string;
   /** Map of addon key -> selected. Keys must match `ADDONS` in constants.ts. */
   addons?: Record<string, boolean>;

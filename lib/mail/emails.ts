@@ -82,6 +82,16 @@ function formatDateTime(iso: string): string {
   }
 }
 
+/**
+ * Abgabezeit row value. Only rendered when an Abgabetermin exists; a missing
+ * time then reads "Wird noch vereinbart". Without a date the row is skipped.
+ */
+function formatHandoverTime(payload: LeadPayload): string | null {
+  if (!payload.handover_date) return null;
+  const time = (payload.handover_time ?? "").trim();
+  return time ? `${time} Uhr` : "Wird noch vereinbart";
+}
+
 /** Discount info for the emails — null when no valid Rabattcode was applied. */
 function discountSummary(
   payload: LeadPayload
@@ -200,6 +210,7 @@ export function buildLeadNotificationEmail(
     ["Anzahl Fenster", payload.windows_count],
     ["Reinigungsdatum", formatDate(payload.cleaning_date)],
     ["Abgabetermin", formatDate(payload.handover_date)],
+    ["Abgabezeit", formatHandoverTime(payload)],
     ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : "–"],
     ["Express", payload.express ? "Ja (+15%)" : "Nein"],
     ["Bemerkungen", payload.notes],
@@ -399,6 +410,7 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     ["Ort / PLZ", [payload.zip, payload.city].filter(Boolean).join(" ")],
     ["Reinigungsdatum", formatDate(payload.cleaning_date)],
     ["Abgabetermin", formatDate(payload.handover_date)],
+    ["Abgabezeit", formatHandoverTime(payload)],
     ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : null],
     ["Express", payload.express ? "Ja (+15%)" : null],
     ["Rabattcode", discount ? `${discount.code} (−${discount.label})` : null],
