@@ -136,6 +136,15 @@ function mappedLabel(
   return labels[value] ?? value;
 }
 
+/**
+ * Safe attachment summary — count only. Storage paths or links to the
+ * uploaded files never appear in any email.
+ */
+function attachmentsCountLabel(payload: LeadPayload): string | null {
+  const count = payload.attachments?.length ?? 0;
+  return count > 0 ? `${count} Datei(en) hochgeladen` : null;
+}
+
 /** Discount info for the emails — null when no valid Rabattcode was applied. */
 function discountSummary(
   payload: LeadPayload
@@ -263,6 +272,7 @@ export function buildLeadNotificationEmail(
     ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : "–"],
     ["Express", payload.express ? "Ja (+15%)" : "Nein"],
     ["Bemerkungen", payload.notes],
+    ["Fotos", attachmentsCountLabel(payload)],
     [
       "Richtpreis",
       `CHF ${payload.estimated_price_min} – CHF ${payload.estimated_price_max}`,
@@ -466,6 +476,7 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     ["Wichtiger", mappedLabel(payload.priority_preference, PRIORITY_LABELS)],
     ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : null],
     ["Express", payload.express ? "Ja (+15%)" : null],
+    ["Fotos", attachmentsCountLabel(payload)],
     ["Rabattcode", discount ? `${discount.code} (−${discount.label})` : null],
   ];
   const presentRows = rows.filter(

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CITIES } from "@/lib/constants";
-import type { LeadFormData } from "@/lib/lead-payload";
+import type { LeadAttachmentRef, LeadFormData } from "@/lib/lead-payload";
 
 interface LeadFormProps {
   prefilledData?: Partial<LeadFormData>;
@@ -34,6 +34,38 @@ const RECURRENCE_OPTIONS: { value: string; label: string }[] = [
   { value: "other", label: "Andere" },
 ];
 
+/* ---- Optional photo/file upload (Lead Autopilot upload endpoint) ---- */
+// Limits mirror the Lead Autopilot server-side rules (max. 10 files à 10 MB,
+// JPG/PNG/WEBP/PDF). Client checks are UX only — the backend re-validates.
+const MAX_UPLOAD_FILES = 10;
+const MAX_UPLOAD_FILE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_UPLOAD_MIMES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
+const ALLOWED_UPLOAD_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+
+const UPLOAD_ERROR_TOO_MANY = "Bitte laden Sie maximal 10 Dateien hoch.";
+const UPLOAD_ERROR_TOO_LARGE = "Eine Datei ist zu gross. Maximal 10 MB pro Datei.";
+const UPLOAD_ERROR_BAD_TYPE = "Bitte laden Sie nur JPG, PNG, WEBP oder PDF hoch.";
+const UPLOAD_ERROR_FAILED =
+  "Die Fotos konnten nicht hochgeladen werden. Bitte versuchen Sie es erneut oder senden Sie die Anfrage ohne Fotos.";
+const UPLOAD_ERROR_NOT_AVAILABLE =
+  "Foto-Upload ist aktuell nicht verfügbar. Bitte senden Sie die Anfrage ohne Fotos.";
+
+function isAllowedUploadFile(file: File): boolean {
+  if (ALLOWED_UPLOAD_MIMES.includes(file.type)) return true;
+  const name = file.name.toLowerCase();
+  return ALLOWED_UPLOAD_EXTENSIONS.some((ext) => name.endsWith(ext));
+}
+
+function formatFileSizeMb(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  return `${mb < 1 ? mb.toFixed(2) : mb.toFixed(1)} MB`;
+}
+
 export default function LeadForm({
   prefilledData = {},
   estimatedMin,
@@ -44,7 +76,13 @@ export default function LeadForm({
 }: LeadFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Optional photos/files — uploaded to the Lead Autopilot on submit; only
+  // the returned references go into the lead payload (never file contents).
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const [form, setForm] = useState<Partial<FormState>>({
     apartment_size: "3.5",
@@ -104,6 +142,79 @@ export default function LeadForm({
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files ?? []);
+    // Reset so selecting the same file again re-triggers onChange.
+    e.target.value = "";
+    if (selected.length === 0) return;
+
+    setUploadError(null);
+
+    if (uploadFiles.length + selected.length > MAX_UPLOAD_FILES) {
+      setUploadError(UPLOAD_ERROR_TOO_MANY);
+      return;
+    }
+    if (selected.some((f) => !isAllowedUploadFile(f))) {
+      setUploadError(UPLOAD_ERROR_BAD_TYPE);
+      return;
+    }
+    if (selected.some((f) => f.size > MAX_UPLOAD_FILE_BYTES)) {
+      setUploadError(UPLOAD_ERROR_TOO_LARGE);
+      return;
+    }
+
+    setUploadFiles((prev) => [...prev, ...selected]);
+  };
+
+  const removeUploadFile = (index: number) => {
+    setUploadFiles((prev) => prev.filter((_, i) => i !== index));
+    setUploadError(null);
+  };
+
+  /**
+   * Uploads the selected files to the Lead Autopilot upload endpoint and
+   * returns the attachment references for the lead payload. Returns `null`
+   * when no files are selected. Throws with a customer-friendly message when
+   * the upload is unavailable or fails — the lead submit is then blocked.
+   */
+  const uploadPhotos = async (): Promise<LeadAttachmentRef[] | null> => {
+    if (uploadFiles.length === 0) return null;
+
+    // UX re-check before upload — the backend validates again server-side.
+    if (uploadFiles.length > MAX_UPLOAD_FILES) throw new Error(UPLOAD_ERROR_TOO_MANY);
+    if (uploadFiles.some((f) => !isAllowedUploadFile(f))) throw new Error(UPLOAD_ERROR_BAD_TYPE);
+    if (uploadFiles.some((f) => f.size > MAX_UPLOAD_FILE_BYTES))
+      throw new Error(UPLOAD_ERROR_TOO_LARGE);
+
+    const uploadUrl = process.env.NEXT_PUBLIC_CLEAN24_LEAD_UPLOAD_URL;
+    if (!uploadUrl) throw new Error(UPLOAD_ERROR_NOT_AVAILABLE);
+
+    setUploadingPhotos(true);
+    try {
+      const formData = new FormData();
+      for (const file of uploadFiles) formData.append("files", file);
+
+      const res = await fetch(uploadUrl, { method: "POST", body: formData });
+      const data = await res.json().catch(() => null);
+      if (
+        !res.ok ||
+        !data?.ok ||
+        !Array.isArray(data.attachments) ||
+        data.attachments.length === 0
+      ) {
+        throw new Error(UPLOAD_ERROR_FAILED);
+      }
+      return data.attachments as LeadAttachmentRef[];
+    } catch (err) {
+      // Network errors etc. also surface as the friendly upload message.
+      throw err instanceof Error && err.message === UPLOAD_ERROR_FAILED
+        ? err
+        : new Error(UPLOAD_ERROR_FAILED);
+    } finally {
+      setUploadingPhotos(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -122,8 +233,13 @@ export default function LeadForm({
 
     setSubmitting(true);
     setError(null);
+    setUploadError(null);
 
     try {
+      // Upload photos first (if any) — on failure the submit is blocked and
+      // the customer sees a clear error. Without files nothing changes.
+      const attachments = await uploadPhotos();
+
       const utmParams =
         typeof window !== "undefined"
           ? Object.fromEntries(new URLSearchParams(window.location.search).entries())
@@ -131,6 +247,7 @@ export default function LeadForm({
 
       const payload = {
         ...form,
+        attachments: attachments ?? undefined,
         handover_time: (form.handover_time ?? "").trim() || undefined,
         // New key expected by Lead Autopilot; square_meters stays for
         // backward compatibility (same value, no rename).
@@ -442,6 +559,51 @@ export default function LeadForm({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
+          Fotos hochladen (optional)
+        </label>
+        <p className="text-xs text-gray-500 mb-2 leading-snug">
+          Laden Sie optional Fotos der Wohnung oder des Objekts hoch, damit wir Ihre
+          Anfrage genauer prüfen können.
+        </p>
+        <input
+          type="file"
+          multiple
+          accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+          onChange={handleFilesSelected}
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-3 file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold file:text-xs file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+        />
+        <p className="mt-1 text-xs text-gray-400">
+          Max. 10 Dateien, je max. 10 MB. JPG, PNG, WEBP oder PDF.
+        </p>
+        {uploadFiles.length > 0 && (
+          <ul className="mt-2 space-y-1">
+            {uploadFiles.map((file, index) => (
+              <li
+                key={`${file.name}-${index}`}
+                className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5"
+              >
+                <span className="flex-1 truncate">{file.name}</span>
+                <span className="text-gray-400 whitespace-nowrap">
+                  {formatFileSizeMb(file.size)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeUploadFile(index)}
+                  disabled={submitting}
+                  aria-label={`${file.name} entfernen`}
+                  className="text-gray-400 hover:text-red-500 disabled:opacity-50 font-semibold px-1"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {uploadError && <p className="mt-1 text-xs text-red-600">{uploadError}</p>}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           Rabattcode (optional)
         </label>
         <div className="flex gap-2">
@@ -495,7 +657,11 @@ export default function LeadForm({
           disabled={submitting}
           className="flex-grow bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
         >
-          {submitting ? "Wird gesendet..." : "Kostenlose Anfrage absenden"}
+          {uploadingPhotos
+            ? "Fotos werden hochgeladen..."
+            : submitting
+              ? "Wird gesendet..."
+              : "Kostenlose Anfrage absenden"}
         </button>
       </div>
 

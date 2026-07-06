@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildLeadPayload, type LeadFormData } from "@/lib/lead-payload";
+import {
+  buildLeadPayload,
+  type LeadAttachmentRef,
+  type LeadFormData,
+} from "@/lib/lead-payload";
 import { isSmtpConfigured, sendMail } from "@/lib/mail/smtp";
 import {
   buildLeadNotificationEmail,
@@ -13,6 +17,37 @@ import { applyDiscountToRange } from "@/lib/discount";
 
 // nodemailer requires the Node.js runtime (not Edge).
 export const runtime = "nodejs";
+
+// Max attachment references per lead — mirrors the Lead Autopilot upload limit.
+const MAX_ATTACHMENT_REFS = 10;
+
+/**
+ * Keeps only well-formed attachment references (uploaded to the Lead Autopilot
+ * beforehand; the browser sends the returned references verbatim). Anything
+ * malformed is dropped — never file contents, never extra keys.
+ */
+function sanitizeAttachments(value: unknown): LeadAttachmentRef[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const refs = value
+    .filter(
+      (a): a is LeadAttachmentRef =>
+        typeof a === "object" &&
+        a !== null &&
+        typeof (a as LeadAttachmentRef).storage_path === "string" &&
+        (a as LeadAttachmentRef).storage_path.trim() !== "" &&
+        typeof (a as LeadAttachmentRef).filename === "string" &&
+        typeof (a as LeadAttachmentRef).mime_type === "string" &&
+        typeof (a as LeadAttachmentRef).size_bytes === "number"
+    )
+    .slice(0, MAX_ATTACHMENT_REFS)
+    .map((a) => ({
+      storage_path: a.storage_path,
+      filename: a.filename,
+      mime_type: a.mime_type,
+      size_bytes: a.size_bytes,
+    }));
+  return refs.length > 0 ? refs : undefined;
+}
 
 const REQUIRED_FIELDS: (keyof LeadFormData)[] = [
   "customer_name",
@@ -48,6 +83,7 @@ export async function POST(request: NextRequest) {
     ...data,
     addons: data.addons ?? {},
     express: data.express ?? false,
+    attachments: sanitizeAttachments(data.attachments),
   });
 
   // ---- Discount / Rabattcode (validated server-side via Lead Autopilot) ----

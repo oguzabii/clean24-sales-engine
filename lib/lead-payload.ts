@@ -1,5 +1,17 @@
 import { calculatePrice } from "./pricing";
 
+/**
+ * Reference to a file already uploaded to the Lead Autopilot upload endpoint
+ * (`POST /api/uploads/website-lead`). Only these references travel in the
+ * lead payload — never file contents or base64.
+ */
+export interface LeadAttachmentRef {
+  storage_path: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+}
+
 export interface LeadFormData {
   customer_name: string;
   email: string;
@@ -33,6 +45,8 @@ export interface LeadFormData {
   notes?: string;
   /** Optional discount / Rabattcode entered by the customer. */
   discount_code?: string;
+  /** References to files already uploaded to the Lead Autopilot (optional). */
+  attachments?: LeadAttachmentRef[];
   page_path?: string;
   utm_source?: string;
   utm_medium?: string;
