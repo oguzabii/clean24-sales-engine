@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import WhatsAppButton from "@/components/WhatsAppButton";
 import { COMPANY } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -10,9 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default function DankePage() {
-  const whatsappMsg =
-    "Guten Tag, ich habe soeben eine Anfrage über die Website gesendet und möchte mich kurz vorstellen. Können Sie mir bitte Fotos zeigen oder soll ich Fotos der Wohnung schicken?";
-
   return (
     <section className="min-h-screen bg-gray-50 flex items-center justify-center py-20 px-4">
       <div className="max-w-xl w-full text-center">
@@ -29,7 +25,7 @@ export default function DankePage() {
           Ihre Anfrage wurde erhalten. Wir haben Ihnen eine <strong>Eingangsbestätigung mit Ihrem Richtpreis</strong> per E-Mail gesendet – bitte prüfen Sie ggf. auch den Spam-Ordner.
         </p>
         <p className="text-gray-600 mb-8 leading-relaxed">
-          Clean24 prüft Ihre Angaben und meldet sich anschliessend mit <strong>Fixpreis und Terminvorschlag</strong>. <strong>Fotos der Wohnung</strong> oder Ihre Abgabeliste können Sie uns ergänzend per WhatsApp senden.
+          Clean24 prüft Ihre Angaben und meldet sich anschliessend mit <strong>Fixpreis und Terminvorschlag</strong>. Bei Fragen erreichen Sie uns telefonisch unter <strong>044 516 19 23</strong> oder per E-Mail an <strong>info@clean-24.ch</strong>.
         </p>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
@@ -52,7 +48,15 @@ export default function DankePage() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <WhatsAppButton message={whatsappMsg} label="Fotos via WhatsApp senden" />
+          <a
+            href={`mailto:${COMPANY.email}`}
+            className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            {COMPANY.email}
+          </a>
           <a
             href={`tel:${COMPANY.phone}`}
             className="inline-flex items-center justify-center gap-2 border border-gray-200 text-gray-700 hover:text-blue-600 font-semibold px-6 py-3 rounded-xl transition-colors"

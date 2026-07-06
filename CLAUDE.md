@@ -20,7 +20,7 @@ MwSt Nr.: CHE-260.909.323
 ```
 clean24-sales-engine/
 ├── app/                         # Next.js App Router pages
-│   ├── layout.tsx               # Root layout (Header, Footer, WhatsApp float)
+│   ├── layout.tsx               # Root layout (Header, Footer)
 │   ├── page.tsx                 # Homepage /
 │   ├── umzugsreinigung/         # Main sales page
 │   ├── umzugsreinigung-zuerich/ # Local SEO – Zürich
@@ -31,7 +31,7 @@ clean24-sales-engine/
 │   ├── danke/                   # Thank-you page after form submit
 │   └── api/leads/website/       # POST route.ts – lead ingestion API
 ├── components/                  # Modular UI components
-│   ├── Header.tsx               # Fixed nav with WhatsApp CTA
+│   ├── Header.tsx               # Minimal fixed header (logo only)
 │   ├── Footer.tsx
 │   ├── Hero.tsx
 │   ├── TrustBadges.tsx
@@ -39,7 +39,6 @@ clean24-sales-engine/
 │   ├── PriceCalculator.tsx      # 3-step wizard (size → addons → contact)
 │   ├── AddOnSelector.tsx
 │   ├── LeadForm.tsx             # Contact + date form, POSTs to /api/leads/website
-│   ├── WhatsAppButton.tsx       # Supports primary / secondary / floating variants
 │   ├── FAQ.tsx                  # Accordion FAQ
 │   ├── ProcessSteps.tsx
 │   ├── CTASection.tsx
@@ -50,8 +49,7 @@ clean24-sales-engine/
 │   ├── constants.ts             # Company data, pricing, cities
 │   ├── pricing.ts               # Price calculation logic
 │   ├── lead-payload.ts          # Lead payload builder
-│   ├── seo.ts                   # Metadata helpers, LOCAL_SEO_PAGES config
-│   └── whatsapp.ts              # WhatsApp URL builder
+│   └── seo.ts                   # Metadata helpers, LOCAL_SEO_PAGES config
 └── .env.example                 # Env var documentation
 ```
 

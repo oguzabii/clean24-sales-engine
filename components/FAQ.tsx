@@ -36,7 +36,7 @@ const DEFAULT_FAQ: FAQItem[] = [
   {
     question: "In welchen Gebieten sind Sie tätig?",
     answer:
-      "Unser Einsatzgebiet umfasst Zürich Stadt, das gesamte Limmattal (Dietikon, Schlieren, Urdorf, Spreitenbach, Weiningen) und die weitere Umgebung. Bei Fragen zu Ihrem Standort kontaktieren Sie uns kurz via WhatsApp.",
+      "Unser Einsatzgebiet umfasst Zürich Stadt, das gesamte Limmattal (Dietikon, Schlieren, Urdorf, Spreitenbach, Weiningen) und die weitere Umgebung. Bei Fragen zu Ihrem Standort erreichen Sie uns telefonisch unter 044 516 19 23 oder per E-Mail an info@clean-24.ch.",
   },
   {
     question: "Was ist in der Umzugsreinigung enthalten?",

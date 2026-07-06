@@ -3,7 +3,6 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import WhatsAppButton from "@/components/WhatsAppButton";
 
 const geist = Geist({ subsets: ["latin"] });
 
@@ -37,7 +36,6 @@ export default function RootLayout({
         <Header />
         <main className="pt-16 md:pt-24">{children}</main>
         <Footer />
-        <WhatsAppButton variant="floating" />
       </body>
     </html>
   );

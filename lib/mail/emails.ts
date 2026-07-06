@@ -11,7 +11,6 @@ import {
   APARTMENT_SIZE_LABELS,
   HOUSE_SURCHARGE,
 } from "@/lib/constants";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { CHECKLIST_SECTIONS, CHECKLIST_PDF_FILENAME } from "./checklist-data";
 import type { LeadPayload } from "@/lib/lead-payload";
 
@@ -345,7 +344,6 @@ export function buildLeadNotificationEmail(
 export function buildChecklistEmail(): EmailContent {
   const subject = "Ihre Wohnungsabgabe-Checkliste von Clean24";
   const offerUrl = `${SITE_URL}/#offer`;
-  const whatsappUrl = buildWhatsAppUrl();
 
   const sectionsHtml = CHECKLIST_SECTIONS.map(
     (section) => `
@@ -392,8 +390,10 @@ export function buildChecklistEmail(): EmailContent {
         Kostenlose Offerte anfordern
       </a>
       <div style="margin-top:12px;font-size:12px;color:#64748b;">
-        Oder direkt per
-        <a href="${whatsappUrl}" style="color:#2563eb;text-decoration:none;">WhatsApp</a>
+        Oder telefonisch unter
+        <a href="tel:${COMPANY.phone.replace(/\s/g, "")}" style="color:#2563eb;text-decoration:none;">044 516 19 23</a>
+        · per E-Mail an
+        <a href="mailto:${COMPANY.email}" style="color:#2563eb;text-decoration:none;">${escapeHtml(COMPANY.email)}</a>
       </div>
     </div>`;
 
@@ -415,7 +415,7 @@ export function buildChecklistEmail(): EmailContent {
     "Lieber den Profis überlassen? Clean24 übernimmt Ihre Umzugsreinigung komplett",
     "– inkl. Abgabegarantie und Begleitung beim Übergabetermin.",
     `Kostenlose Offerte: ${offerUrl}`,
-    `WhatsApp: ${whatsappUrl}`,
+    `Telefon: 044 516 19 23 · E-Mail: ${COMPANY.email}`,
     "",
     contactBlockText(),
   ].join("\n");
@@ -450,9 +450,6 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     : "Guten Tag,";
   const priceText = `CHF ${payload.estimated_price_min} – CHF ${payload.estimated_price_max}`;
   const discount = discountSummary(payload);
-  const whatsappUrl = buildWhatsAppUrl(
-    "Guten Tag, ich sende Ihnen gerne Fotos meiner Wohnung für die Umzugsreinigung."
-  );
 
   const rows: [string, string | null | undefined][] = [
     ["Wohnung / Zimmer", sizeLabel],
@@ -521,14 +518,14 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
       Der Richtpreis ist unverbindlich. Nach Prüfung Ihrer Angaben erhalten Sie eine klare
       Rückmeldung mit Fixpreis und Terminvorschlag.
     </p>
-    <div style="padding:18px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;">
-      <p style="margin:0 0 8px;color:#166534;font-size:14px;font-weight:600;">Fotos &amp; Abgabeliste ergänzen</p>
-      <p style="margin:0 0 14px;color:#374151;font-size:13px;">
-        Fotos der Wohnung oder Ihre Abgabeliste können Sie uns ergänzend per WhatsApp senden – oder uns einfach eine Frage stellen.
+    <div style="padding:18px;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;">
+      <p style="margin:0 0 8px;color:#1e40af;font-size:14px;font-weight:600;">Fragen zu Ihrer Anfrage?</p>
+      <p style="margin:0;color:#374151;font-size:13px;">
+        Bei Fragen erreichen Sie uns telefonisch unter
+        <a href="tel:${COMPANY.phone.replace(/\s/g, "")}" style="color:#2563eb;text-decoration:none;font-weight:600;">044 516 19 23</a>
+        oder per E-Mail an
+        <a href="mailto:${COMPANY.email}" style="color:#2563eb;text-decoration:none;font-weight:600;">${escapeHtml(COMPANY.email)}</a>.
       </p>
-      <a href="${whatsappUrl}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 22px;border-radius:10px;">
-        Fotos per WhatsApp senden
-      </a>
     </div>`;
 
   const text = [
@@ -552,8 +549,8 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     "Der Richtpreis ist unverbindlich. Nach Prüfung Ihrer Angaben erhalten Sie eine",
     "klare Rückmeldung mit Fixpreis und Terminvorschlag.",
     "",
-    "Fotos der Wohnung oder Ihre Abgabeliste können Sie uns ergänzend per WhatsApp senden:",
-    whatsappUrl,
+    "Bei Fragen erreichen Sie uns telefonisch unter 044 516 19 23",
+    `oder per E-Mail an ${COMPANY.email}.`,
     "",
     contactBlockText(),
   ].join("\n");

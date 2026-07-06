@@ -7,7 +7,7 @@ const steps = [
   {
     number: "02",
     title: "Anfrage absenden",
-    desc: "Füllen Sie das Kontaktformular aus oder schreiben Sie uns per WhatsApp. Wir melden uns innerhalb von 10 Minuten.",
+    desc: "Füllen Sie das Kontaktformular aus oder rufen Sie uns an unter 044 516 19 23. Wir melden uns innerhalb von 10 Minuten.",
   },
   {
     number: "03",

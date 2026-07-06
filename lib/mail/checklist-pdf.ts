@@ -169,7 +169,7 @@ export async function generateChecklistPdf(): Promise<Buffer> {
     color: INK,
   });
   page.drawText(
-    safe(`Kostenlose Offerte: ${COMPANY.website}  ·  WhatsApp/Telefon: ${COMPANY.phoneDisplay}`),
+    safe(`Kostenlose Offerte: ${COMPANY.website}  ·  Telefon: ${COMPANY.phoneDisplay}  ·  ${COMPANY.email}`),
     { x: MARGIN + 14, y: y - 42, size: 10, font, color: rgb(0.28, 0.34, 0.46) },
   );
   y -= 72;

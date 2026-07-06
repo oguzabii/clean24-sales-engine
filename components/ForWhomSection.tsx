@@ -20,8 +20,8 @@ const CARDS = [
     solution: "Richtpreis in 60 Sekunden. Fixpreis nach Prüfung. Strukturierter Ablauf bis zur Abgabe.",
   },
   {
-    problem: "Sie möchten bequem per WhatsApp anfragen",
-    solution: "Senden Sie 3–5 Fotos – wir liefern eine schnelle Ersteinschätzung mit Richtpreis.",
+    problem: "Sie möchten eine schnelle Ersteinschätzung",
+    solution: "Rufen Sie uns an unter 044 516 19 23 oder schreiben Sie an info@clean-24.ch – wir liefern eine schnelle Ersteinschätzung mit Richtpreis.",
   },
 ];
 

@@ -122,7 +122,8 @@ export default function ChecklistMagnet({
                 className="max-w-lg mx-auto mb-3 bg-amber-500/15 border border-amber-400/30 rounded-2xl px-5 py-4 text-left text-sm text-amber-100 leading-relaxed"
               >
                 Die Anfrage wurde erfasst, aber der Versand konnte gerade nicht bestätigt werden.
-                Bitte kontaktieren Sie uns direkt per WhatsApp oder E-Mail.
+                Bitte kontaktieren Sie uns telefonisch unter 044 516 19 23 oder per E-Mail an
+                info@clean-24.ch.
               </div>
             )}
             <form

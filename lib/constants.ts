@@ -5,7 +5,6 @@ export const COMPANY = {
   email: "info@clean-24.ch",
   phone: "+41 44 516 19 23",
   phoneDisplay: "+41 44 516 19 23",
-  whatsapp: "+41766080055",
   website: "www.clean-24.ch",
   mwst: "CHE-260.909.323",
 } as const;
@@ -180,7 +179,7 @@ export const LIVE_OPS = {
  */
 export const ACTIVITY_FEED: { label: string; detail: string; timeAgo: string }[] = [
   { label: "Offerte vorbereitet", detail: "Umzugsreinigung 3.5 Zimmer", timeAgo: "vor wenigen Minuten" },
-  { label: "WhatsApp-Anfrage erhalten", detail: "Fotos zur Ersteinschätzung", timeAgo: "vor 9 Minuten" },
+  { label: "Telefonische Anfrage erhalten", detail: "Ersteinschätzung besprochen", timeAgo: "vor 9 Minuten" },
   { label: "Checkliste versendet", detail: "Wohnungsabgabe-Checkliste", timeAgo: "vor 17 Minuten" },
   { label: "Team eingeplant", detail: "Endreinigung mit Abgabebegleitung", timeAgo: "vor 24 Minuten" },
   { label: "Umzugsreinigung bestätigt", detail: "Termin koordiniert", timeAgo: "vor 36 Minuten" },
