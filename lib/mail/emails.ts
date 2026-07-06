@@ -5,7 +5,12 @@
  * text }` which is handed to `sendMail` in `lib/mail/smtp.ts`. All user-provided
  * values are HTML-escaped before being placed in markup.
  */
-import { COMPANY, ADDONS_BY_KEY, APARTMENT_SIZE_LABELS } from "@/lib/constants";
+import {
+  COMPANY,
+  ADDONS_BY_KEY,
+  APARTMENT_SIZE_LABELS,
+  HOUSE_SURCHARGE,
+} from "@/lib/constants";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { CHECKLIST_SECTIONS, CHECKLIST_PDF_FILENAME } from "./checklist-data";
 import type { LeadPayload } from "@/lib/lead-payload";
@@ -90,6 +95,46 @@ function formatHandoverTime(payload: LeadPayload): string | null {
   if (!payload.handover_date) return null;
   const time = (payload.handover_time ?? "").trim();
   return time ? `${time} Uhr` : "Wird noch vereinbart";
+}
+
+/** Objektart row — the Haus surcharge is spelled out as a breakdown hint. */
+function propertyTypeLabel(payload: LeadPayload): string | null {
+  if (payload.property_type === "haus") return `Haus (+ CHF ${HOUSE_SURCHARGE})`;
+  if (payload.property_type === "wohnung") return "Wohnung";
+  return null;
+}
+
+/** Explicit Ja/Nein — the field is boolean and defaults to true (Ja). */
+function guaranteeLabel(payload: LeadPayload): string | null {
+  if (payload.handover_guarantee_requested == null) return null;
+  return payload.handover_guarantee_requested ? "Ja" : "Nein";
+}
+
+const RECURRENCE_LABELS: Record<string, string> = {
+  daily: "Täglich",
+  weekly: "Wöchentlich",
+  biweekly: "Alle 2 Wochen",
+  monthly: "Monatlich",
+  other: "Andere",
+};
+
+const DIRTINESS_LABELS: Record<string, string> = {
+  low: "Wenig schmutzig",
+  medium: "Mittel schmutzig",
+  high: "Sehr schmutzig",
+};
+
+const PRIORITY_LABELS: Record<string, string> = {
+  quality: "Qualität",
+  price: "Preis",
+};
+
+function mappedLabel(
+  value: string | undefined,
+  labels: Record<string, string>
+): string | null {
+  if (!value) return null;
+  return labels[value] ?? value;
 }
 
 /** Discount info for the emails — null when no valid Rabattcode was applied. */
@@ -206,11 +251,16 @@ export function buildLeadNotificationEmail(
     ["PLZ", payload.zip],
     ["Adresse", address],
     ["Wohnungsgrösse", sizeLabel],
-    ["Fläche (m²)", payload.square_meters],
+    ["Objektart", propertyTypeLabel(payload)],
+    ["Bodenfläche (m²)", payload.floor_area_m2 ?? payload.square_meters],
     ["Anzahl Fenster", payload.windows_count],
     ["Reinigungsdatum", formatDate(payload.cleaning_date)],
     ["Abgabetermin", formatDate(payload.handover_date)],
     ["Abgabezeit", formatHandoverTime(payload)],
+    ["Abgabegarantie gewünscht", guaranteeLabel(payload)],
+    ["Wiederholung", mappedLabel(payload.recurrence, RECURRENCE_LABELS)],
+    ["Verschmutzungsgrad", mappedLabel(payload.dirtiness_level, DIRTINESS_LABELS)],
+    ["Wichtiger", mappedLabel(payload.priority_preference, PRIORITY_LABELS)],
     ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : "–"],
     ["Express", payload.express ? "Ja (+15%)" : "Nein"],
     ["Bemerkungen", payload.notes],
@@ -406,11 +456,17 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
 
   const rows: [string, string | null | undefined][] = [
     ["Wohnung / Zimmer", sizeLabel],
+    ["Objektart", propertyTypeLabel(payload)],
     ["Adresse", payload.address],
     ["Ort / PLZ", [payload.zip, payload.city].filter(Boolean).join(" ")],
+    ["Bodenfläche (m²)", payload.floor_area_m2 ?? payload.square_meters],
     ["Reinigungsdatum", formatDate(payload.cleaning_date)],
     ["Abgabetermin", formatDate(payload.handover_date)],
     ["Abgabezeit", formatHandoverTime(payload)],
+    ["Abgabegarantie gewünscht", guaranteeLabel(payload)],
+    ["Wiederholung", mappedLabel(payload.recurrence, RECURRENCE_LABELS)],
+    ["Verschmutzungsgrad", mappedLabel(payload.dirtiness_level, DIRTINESS_LABELS)],
+    ["Wichtiger", mappedLabel(payload.priority_preference, PRIORITY_LABELS)],
     ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : null],
     ["Express", payload.express ? "Ja (+15%)" : null],
     ["Rabattcode", discount ? `${discount.code} (−${discount.label})` : null],

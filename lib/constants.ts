@@ -108,6 +108,12 @@ export const ADDON_PRICES = {
 
 export const EXPRESS_SURCHARGE = 0.15;
 
+/**
+ * Fixed surcharge (CHF, incl. MwSt.) added to BOTH ends of the displayed
+ * Richtpreis range when the object is a house instead of an apartment.
+ */
+export const HOUSE_SURCHARGE = 200;
+
 export const PRICE_RANGE_MARGIN = 0.1;
 
 export const CITIES = [

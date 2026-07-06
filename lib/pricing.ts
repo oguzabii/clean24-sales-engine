@@ -2,6 +2,7 @@ import {
   ADDONS_BY_KEY,
   BASE_PRICES,
   EXPRESS_SURCHARGE,
+  HOUSE_SURCHARGE,
   PRICE_RANGE_MARGIN,
 } from "./constants";
 
@@ -10,12 +11,16 @@ export interface PricingInput {
   /** Map of addon key -> selected. Keys must match `ADDONS` in constants.ts. */
   addons?: Record<string, boolean>;
   express?: boolean;
+  /** "haus" adds HOUSE_SURCHARGE to both ends of the displayed range. */
+  property_type?: string;
 }
 
 export interface PricingResult {
   base: number;
   addons: number;
   express_surcharge: number;
+  /** CHF added to both min and max when property_type is "haus", else 0. */
+  house_surcharge: number;
   subtotal: number;
   min: number;
   max: number;
@@ -47,13 +52,18 @@ export function calculatePrice(input: PricingInput): PricingResult {
 
   const subtotal = subtotal_before_express + express_surcharge;
 
-  const min = Math.floor(subtotal / 10) * 10;
-  const max = Math.ceil((subtotal * (1 + PRICE_RANGE_MARGIN)) / 10) * 10;
+  // Haus: fixed surcharge on BOTH ends of the displayed range (not part of
+  // the express/margin math — see HOUSE_SURCHARGE in constants.ts).
+  const house_surcharge = input.property_type === "haus" ? HOUSE_SURCHARGE : 0;
+
+  const min = Math.floor(subtotal / 10) * 10 + house_surcharge;
+  const max = Math.ceil((subtotal * (1 + PRICE_RANGE_MARGIN)) / 10) * 10 + house_surcharge;
 
   return {
     base,
     addons: addonsTotal,
     express_surcharge,
+    house_surcharge,
     subtotal,
     min,
     max,

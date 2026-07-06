@@ -10,9 +10,15 @@ type Step = "size" | "addons" | "contact";
 
 interface CalcState {
   apartment_size: string;
+  property_type: string;
   addons: Record<string, boolean>;
   express: boolean;
 }
+
+const PROPERTY_TYPES: { key: string; label: string }[] = [
+  { key: "wohnung", label: "Wohnung" },
+  { key: "haus", label: "Haus" },
+];
 
 const initialAddons: Record<string, boolean> = ADDON_KEYS.reduce((acc, k) => {
   acc[k] = false;
@@ -21,6 +27,7 @@ const initialAddons: Record<string, boolean> = ADDON_KEYS.reduce((acc, k) => {
 
 const INITIAL_STATE: CalcState = {
   apartment_size: "3.5",
+  property_type: "wohnung",
   addons: { ...initialAddons },
   express: false,
 };
@@ -30,12 +37,21 @@ export default function PriceCalculator() {
   const [state, setState] = useState<CalcState>(INITIAL_STATE);
 
   const pricing = useMemo(
-    () => calculatePrice({ apartment_size: state.apartment_size, addons: state.addons, express: state.express }),
+    () =>
+      calculatePrice({
+        apartment_size: state.apartment_size,
+        addons: state.addons,
+        express: state.express,
+        property_type: state.property_type,
+      }),
     [state]
   );
 
   const setApartmentSize = (key: string) =>
     setState((prev) => ({ ...prev, apartment_size: key }));
+
+  const setPropertyType = (key: string) =>
+    setState((prev) => ({ ...prev, property_type: key }));
 
   const setAddon = (key: string, value: boolean) =>
     setState((prev) => ({ ...prev, addons: { ...prev.addons, [key]: value } }));
@@ -84,6 +100,12 @@ export default function PriceCalculator() {
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
             {APARTMENT_SIZE_LABELS[state.apartment_size]}
           </span>
+          {state.property_type === "haus" && (
+            <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+              Haus (+ CHF {pricing.house_surcharge})
+            </span>
+          )}
           {addonsCount > 0 && (
             <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
@@ -113,6 +135,32 @@ export default function PriceCalculator() {
             <p className="text-xs text-gray-500 mb-4">
               Schritt 1 von 3 · Angaben erfassen
             </p>
+
+            <div className="mb-5">
+              <div className="text-sm font-medium text-gray-700 mb-2">Objektart</div>
+              <div className="grid grid-cols-2 gap-3">
+                {PROPERTY_TYPES.map((pt) => (
+                  <button
+                    key={pt.key}
+                    type="button"
+                    onClick={() => setPropertyType(pt.key)}
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      state.property_type === pt.key
+                        ? "border-blue-600 bg-blue-50"
+                        : "border-gray-200 hover:border-blue-300"
+                    }`}
+                  >
+                    <div className={`font-semibold text-sm ${state.property_type === pt.key ? "text-blue-700" : "text-gray-900"}`}>
+                      {pt.label}
+                    </div>
+                    <div className={`text-[11px] mt-1 uppercase tracking-wider ${state.property_type === pt.key ? "text-blue-500" : "text-gray-400"}`}>
+                      {state.property_type === pt.key ? "Ausgewählt" : "Auswählen"}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               {Object.entries(APARTMENT_SIZE_LABELS).map(([key, label]) => (
                 <button
@@ -200,6 +248,7 @@ export default function PriceCalculator() {
             <LeadForm
               prefilledData={{
                 apartment_size: state.apartment_size,
+                property_type: state.property_type,
                 addons: state.addons,
                 express: state.express,
               }}

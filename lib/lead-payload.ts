@@ -9,11 +9,23 @@ export interface LeadFormData {
   city: string;
   zip: string;
   apartment_size: string;
+  /** "wohnung" (default) or "haus" — "haus" adds HOUSE_SURCHARGE to the range. */
+  property_type?: string;
   square_meters?: string;
+  /** Floor area in m² (info only, no price effect). */
+  floor_area_m2?: string;
   cleaning_date: string;
   handover_date?: string;
   /** Optional handover time (HH:MM), only meaningful together with handover_date. */
   handover_time?: string;
+  /** Abgabegarantie gewünscht? Defaults to true. No effect on the range. */
+  handover_guarantee_requested?: boolean;
+  /** Recurring services only: daily | weekly | biweekly | monthly | other. */
+  recurrence?: string;
+  /** Info only: low | medium | high. */
+  dirtiness_level?: string;
+  /** Info only: quality | price. */
+  priority_preference?: string;
   windows_count?: string;
   /** Map of addon key -> selected. Keys must match `ADDONS` in constants.ts. */
   addons?: Record<string, boolean>;
@@ -49,6 +61,7 @@ export function buildLeadPayload(data: LeadFormData): LeadPayload {
     apartment_size: data.apartment_size,
     addons: data.addons,
     express: data.express,
+    property_type: data.property_type,
   });
 
   const addons: string[] = [...pricing.selected_addons];
@@ -64,6 +77,8 @@ export function buildLeadPayload(data: LeadFormData): LeadPayload {
     service_type: "umzugsreinigung",
     addons,
     express: data.express ?? false,
+    // Abgabegarantie defaults to "Ja" — always sent explicitly.
+    handover_guarantee_requested: data.handover_guarantee_requested ?? true,
     estimated_price_min: pricing.min,
     estimated_price_max: pricing.max,
     created_at: new Date().toISOString(),

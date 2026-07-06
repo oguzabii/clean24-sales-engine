@@ -11,9 +11,28 @@ interface LeadFormProps {
   estimatedMax?: number;
   onBack?: () => void;
   pagePath?: string;
+  /**
+   * Service the form is submitted for. The Sales Engine currently only sells
+   * Umzugsreinigung; recurring services show the "Wiederholung" selector.
+   */
+  serviceType?: string;
 }
 
 type FormState = Omit<LeadFormData, "source" | "service_type">;
+
+/** Services that show the recurrence ("Wiederholung") selector. */
+const RECURRING_SERVICE_TYPES = [
+  "wiederkehrende_reinigung_privat",
+  "wiederkehrende_reinigung_gewerbe",
+];
+
+const RECURRENCE_OPTIONS: { value: string; label: string }[] = [
+  { value: "daily", label: "Täglich" },
+  { value: "weekly", label: "Wöchentlich" },
+  { value: "biweekly", label: "Alle 2 Wochen" },
+  { value: "monthly", label: "Monatlich" },
+  { value: "other", label: "Andere" },
+];
 
 export default function LeadForm({
   prefilledData = {},
@@ -21,6 +40,7 @@ export default function LeadForm({
   estimatedMax,
   onBack,
   pagePath,
+  serviceType = "umzugsreinigung",
 }: LeadFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -30,8 +50,13 @@ export default function LeadForm({
     apartment_size: "3.5",
     addons: {},
     express: false,
+    // Abgabegarantie defaults to "Ja".
+    handover_guarantee_requested: true,
     ...prefilledData,
   });
+
+  const isUmzugsreinigung = serviceType === "umzugsreinigung";
+  const isRecurringService = RECURRING_SERVICE_TYPES.includes(serviceType);
 
   // Optional Rabattcode — validated server-side via the Autopilot API.
   const [discountCode, setDiscountCode] = useState("");
@@ -88,6 +113,13 @@ export default function LeadForm({
       return;
     }
 
+    // Bodenfläche is optional, but must be a positive number when entered.
+    const floorArea = (form.square_meters ?? "").trim();
+    if (floorArea && (!Number.isFinite(Number(floorArea)) || Number(floorArea) <= 0)) {
+      setError("Bitte geben Sie eine gültige Bodenfläche in m² an.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -100,6 +132,12 @@ export default function LeadForm({
       const payload = {
         ...form,
         handover_time: (form.handover_time ?? "").trim() || undefined,
+        // New key expected by Lead Autopilot; square_meters stays for
+        // backward compatibility (same value, no rename).
+        floor_area_m2: (form.square_meters ?? "").trim() || undefined,
+        recurrence: isRecurringService ? form.recurrence || undefined : undefined,
+        dirtiness_level: form.dirtiness_level || undefined,
+        priority_preference: form.priority_preference || undefined,
         discount_code: discountCode.trim() || undefined,
         page_path: pagePath ?? (typeof window !== "undefined" ? window.location.pathname : "/"),
         utm_source: utmParams.utm_source,
@@ -288,13 +326,55 @@ export default function LeadForm({
         </div>
       </div>
 
+      {(isUmzugsreinigung || isRecurringService) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {isUmzugsreinigung && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Abgabegarantie gewünscht?
+              </label>
+              <select
+                value={(form.handover_guarantee_requested ?? true) ? "ja" : "nein"}
+                onChange={(e) =>
+                  updateField("handover_guarantee_requested", e.target.value === "ja")
+                }
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="ja">Ja</option>
+                <option value="nein">Nein</option>
+              </select>
+            </div>
+          )}
+          {isRecurringService && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Wiederholung
+              </label>
+              <select
+                value={form.recurrence ?? ""}
+                onChange={(e) => updateField("recurrence", e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="">Bitte wählen</option>
+                {RECURRENCE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Fläche m² (optional)
+            Bodenfläche in m² (optional)
           </label>
           <input
             type="number"
+            min={1}
             value={form.square_meters ?? ""}
             onChange={(e) => updateField("square_meters", e.target.value)}
             placeholder="z.B. 85"
@@ -312,6 +392,38 @@ export default function LeadForm({
             placeholder="z.B. 8"
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Verschmutzungsgrad (optional)
+          </label>
+          <select
+            value={form.dirtiness_level ?? ""}
+            onChange={(e) => updateField("dirtiness_level", e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="">Bitte wählen</option>
+            <option value="low">Wenig schmutzig</option>
+            <option value="medium">Mittel schmutzig</option>
+            <option value="high">Sehr schmutzig</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Was ist Ihnen wichtiger? (optional)
+          </label>
+          <select
+            value={form.priority_preference ?? ""}
+            onChange={(e) => updateField("priority_preference", e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="">Bitte wählen</option>
+            <option value="quality">Qualität</option>
+            <option value="price">Preis</option>
+          </select>
         </div>
       </div>
 
