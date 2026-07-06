@@ -500,7 +500,7 @@ export default function LeadForm({
       </div>
 
       <p className="text-xs text-gray-400 text-center">
-        Keine Vorauszahlung. Unverbindlich. Wir antworten innerhalb von 2 Stunden.
+        Keine Vorauszahlung. Unverbindlich. Wir antworten innerhalb von 10 Minuten.
       </p>
     </form>
   );

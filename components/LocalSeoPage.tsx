@@ -85,7 +85,7 @@ export default function LocalSeoPage({ city, slug, headline, intro }: LocalSeoPa
               Direkte Anfrage für {city}
             </h2>
             <p className="text-gray-500">
-              Kein Kalkulator nötig – füllen Sie direkt das Formular aus. Wir antworten innerhalb von 2 Stunden.
+              Kein Kalkulator nötig – füllen Sie direkt das Formular aus. Wir antworten innerhalb von 10 Minuten.
             </p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
