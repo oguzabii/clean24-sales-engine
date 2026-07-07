@@ -8,13 +8,13 @@ const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Clean24 – Umzugsreinigung mit Abgabegarantie in der Schweiz",
+    default: "Clean24 – Reinigung in Zürich & Umgebung | Umzug, Büro, Privat, Bau",
     template: "%s | Clean24 Memis GmbH",
   },
   description:
-    "Professionelle Umzugsreinigung mit Abgabegarantie. Clean24 begleitet die Wohnungsabgabe vor Ort und klärt reinigungsbezogene Punkte direkt. Einsätze in der ganzen Schweiz nach Verfügbarkeit.",
+    "Online Anfrage für Umzugsreinigung, Büroreinigung, Privatreinigung, Baureinigung, Fensterreinigung und weitere Reinigungsarbeiten in Zürich und Umgebung. Umzugsreinigung mit Abgabegarantie.",
   keywords:
-    "Umzugsreinigung Schweiz, Endreinigung Schweiz, Wohnungsreinigung Abgabe, Reinigung mit Abgabegarantie, Reinigungsfirma",
+    "Reinigungsfirma Zürich, Umzugsreinigung Schweiz, Büroreinigung, Privatreinigung, Reinigung mit Abgabegarantie",
   authors: [{ name: "Clean24 Memis GmbH" }],
   creator: "Clean24 Memis GmbH",
   metadataBase: new URL("https://www.clean-24.ch"),

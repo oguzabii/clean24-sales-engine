@@ -18,8 +18,9 @@ export default function Footer() {
               draggable={false}
             />
             <p className="text-sm leading-relaxed max-w-md mt-5">
-              Professionelle Umzugsreinigung mit Abgabegarantie. Einsätze in der ganzen Schweiz
-              nach Verfügbarkeit.
+              Ihre Reinigungsfirma für Umzug, Privat, Büro, Bau, Fenster und Spezialreinigungen –
+              Umzugsreinigungen mit Abgabegarantie. Einsätze in der ganzen Schweiz nach
+              Verfügbarkeit.
             </p>
           </div>
 
@@ -48,7 +49,7 @@ export default function Footer() {
 
         <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
           <p>© {new Date().getFullYear()} {COMPANY.name}. Alle Rechte vorbehalten.</p>
-          <p>Professionelle Reinigung mit Abgabegarantie.</p>
+          <p>Ihr Reinigungsservice – Umzugsreinigung mit Abgabegarantie.</p>
         </div>
       </div>
     </footer>

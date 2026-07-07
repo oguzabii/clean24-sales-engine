@@ -2,20 +2,20 @@ import PriceCalculator from "./PriceCalculator";
 
 const FLOW = [
   {
-    title: "Angaben erfassen",
-    desc: "Wohnungsgrösse, allfällige Zusatzleistungen und Wunschtermin angeben.",
+    title: "Kategorie wählen",
+    desc: "Umzugsreinigung oder eine andere Reinigungsart – Sie wählen die passende Kategorie.",
   },
   {
-    title: "Richtpreis erhalten",
-    desc: "Transparenter Preisbereich – sofort sichtbar, unverbindlich.",
+    title: "Angaben erfassen",
+    desc: "Bei Umzugsreinigungen sehen Sie sofort eine unverbindliche Richtpreis-Spanne; andere Kategorien prüfen wir individuell.",
   },
   {
     title: "Anfrage absenden",
-    desc: "Kostenlose, unverbindliche Anfrage – ohne Vorauszahlung, ohne Verpflichtung.",
+    desc: "Kostenlose, unverbindliche Anfrage – ohne Vorauszahlung, ohne Verpflichtung. Fotos optional beilegen.",
   },
   {
     title: "Clean24 prüft & meldet sich zurück",
-    desc: "Sofortige Eingangsbestätigung. Anschliessend strukturierte Rückmeldung mit Fixpreis und Terminvorschlag.",
+    desc: "Sofortige Eingangsbestätigung. Anschliessend strukturierte Rückmeldung mit Fixpreis bzw. Offerte und Terminvorschlag.",
   },
 ];
 
@@ -41,9 +41,9 @@ export default function OfferStart() {
             Kostenlose, unverbindliche Anfrage in 60 Sekunden.
           </h2>
           <p className="text-gray-600 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-            Sie starten hier eine kostenlose, unverbindliche Anfrage – keine Buchung, keine
-            Vorauszahlung. Nach Prüfung Ihrer Angaben meldet sich Clean24 strukturiert mit Fixpreis
-            und Terminvorschlag.
+            Wählen Sie die passende Reinigung und starten Sie eine kostenlose, unverbindliche
+            Anfrage – keine Buchung, keine Vorauszahlung. Nach Prüfung Ihrer Angaben meldet sich
+            Clean24 strukturiert mit Fixpreis bzw. individueller Offerte und Terminvorschlag.
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export default function OfferStart() {
           </div>
           <p className="text-xs text-gray-500 text-center mt-5 max-w-md mx-auto leading-relaxed">
             Unverbindlich · keine Vorauszahlung · sofortige Eingangsbestätigung nach Absenden ·
-            Fixpreis nach Prüfung Ihrer Angaben.
+            Fixpreis bzw. Offerte nach Prüfung Ihrer Angaben.
           </p>
         </div>
       </div>

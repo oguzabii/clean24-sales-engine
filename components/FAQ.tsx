@@ -10,18 +10,34 @@ interface FAQItem {
 interface FAQProps {
   items?: FAQItem[];
   title?: string;
+  subtitle?: string;
 }
 
 const DEFAULT_FAQ: FAQItem[] = [
   {
+    question: "Welche Reinigungen bietet Clean24 an?",
+    answer:
+      "Umzugsreinigung mit Abgabegarantie, Privat- / Wohnungsreinigung, Büro- / Gewerbereinigung, Baureinigung, Fensterreinigung, Grundreinigung, Hauswartung / Treppenhausreinigung, Räumung / Entsorgung und Spezialreinigungen. Wählen Sie im Anfrageformular einfach die passende Kategorie.",
+  },
+  {
+    question: "Erhalte ich für jede Reinigung sofort einen Preis?",
+    answer:
+      "Bei Umzugsreinigungen erhalten Sie direkt eine unverbindliche Richtpreis-Spanne im Online-Rechner. Alle anderen Kategorien prüfen wir individuell – Sie senden uns Ihre Angaben, und wir melden uns mit einer passenden Offerte.",
+  },
+  {
     question: "Was bedeutet Abgabegarantie?",
     answer:
-      "Wenn die Wohnung beim Abgabetermin nicht abgenommen wird und der Grund in unserer Reinigungsleistung liegt, kommen wir kostenlos zurück und beheben die beanstandeten Punkte. Ihre Kaution ist damit geschützt.",
+      "Die Abgabegarantie gilt für unsere Umzugsreinigungen: Wenn die Wohnung beim Abgabetermin nicht abgenommen wird und der Grund in unserer Reinigungsleistung liegt, kommen wir kostenlos zurück und beheben die beanstandeten Punkte. Ihre Kaution ist damit geschützt. Für andere Reinigungsarten gilt die Abgabegarantie nicht.",
   },
   {
     question: "Ist der Richtpreis verbindlich?",
     answer:
-      "Nein, der Richtpreis ist ein unverbindlicher Schätzwert basierend auf Ihren Angaben. Nach Prüfung der Details erhalten Sie von uns einen verbindlichen Fixpreis. Dieser kann leicht vom Richtpreis abweichen – in der Regel bleibt er aber im angezeigten Bereich.",
+      "Nein, der Richtpreis bei Umzugsreinigungen ist ein unverbindlicher Schätzwert basierend auf Ihren Angaben. Nach Prüfung der Details erhalten Sie von uns einen verbindlichen Fixpreis. Dieser kann leicht vom Richtpreis abweichen – in der Regel bleibt er aber im angezeigten Bereich.",
+  },
+  {
+    question: "Kann ich Fotos zu meiner Anfrage hochladen?",
+    answer:
+      "Ja, Sie können Ihrer Anfrage optional Fotos oder ein PDF beilegen. Das hilft uns, den Aufwand realistisch einzuschätzen. Nach Prüfung Ihrer Angaben meldet sich Clean24 mit einer strukturierten Rückmeldung bei Ihnen.",
   },
   {
     question: "Wie schnell können Sie bei mir reinigen?",
@@ -50,7 +66,11 @@ const DEFAULT_FAQ: FAQItem[] = [
   },
 ];
 
-export default function FAQ({ items = DEFAULT_FAQ, title = "Häufige Fragen" }: FAQProps) {
+export default function FAQ({
+  items = DEFAULT_FAQ,
+  title = "Häufige Fragen",
+  subtitle = "Antworten auf die häufigsten Fragen zu unseren Reinigungsleistungen.",
+}: FAQProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -58,7 +78,7 @@ export default function FAQ({ items = DEFAULT_FAQ, title = "Häufige Fragen" }: 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
-          <p className="text-gray-500">Antworten auf die häufigsten Fragen zur Umzugsreinigung.</p>
+          <p className="text-gray-500">{subtitle}</p>
         </div>
         <div className="space-y-3">
           {items.map((item, index) => (

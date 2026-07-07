@@ -1,8 +1,8 @@
 const steps = [
   {
     number: "01",
-    title: "Richtpreis berechnen",
-    desc: "Geben Sie Ihre Wohnungsgrösse und gewünschte Zusatzleistungen ein. In 60 Sekunden erhalten Sie einen unverbindlichen Richtpreis.",
+    title: "Reinigung wählen",
+    desc: "Wählen Sie die passende Kategorie und erfassen Sie Ihre Angaben. Bei Umzugsreinigungen sehen Sie in 60 Sekunden eine unverbindliche Richtpreis-Spanne.",
   },
   {
     number: "02",
@@ -11,13 +11,13 @@ const steps = [
   },
   {
     number: "03",
-    title: "Fixpreis erhalten",
-    desc: "Nach Prüfung Ihrer Angaben erhalten Sie einen verbindlichen Fixpreis – transparent, ohne Überraschungen.",
+    title: "Fixpreis oder Offerte erhalten",
+    desc: "Nach Prüfung Ihrer Angaben erhalten Sie einen verbindlichen Fixpreis bzw. eine individuelle Offerte – transparent, ohne Überraschungen.",
   },
   {
     number: "04",
-    title: "Reinigung & Abgabe",
-    desc: "Unser Team erscheint pünktlich zum vereinbarten Termin und reinigt Ihre Wohnung nach Schweizer Abgabestandards.",
+    title: "Reinigung durch Clean24",
+    desc: "Unser Team erscheint pünktlich zum vereinbarten Termin und reinigt nach Schweizer Standard – bei Umzugsreinigungen inklusive Abgabe mit Abgabegarantie.",
   },
 ];
 
@@ -32,7 +32,7 @@ export default function ProcessSteps({ title = "So läuft es ab" }: ProcessSteps
         <div className="text-center mb-12">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
           <p className="text-gray-500 max-w-xl mx-auto">
-            Von der Anfrage bis zur erfolgreichen Abgabe – unkompliziert und professionell.
+            Von der Anfrage bis zur ausgeführten Reinigung – unkompliziert und professionell.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

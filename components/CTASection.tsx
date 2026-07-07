@@ -4,6 +4,9 @@ import { COMPANY } from "@/lib/constants";
 interface CTASectionProps {
   title?: string;
   subtitle?: string;
+  /** Label of the calculator button; keep "Richtpreis berechnen" where the CTA leads to move-out pricing. */
+  calculatorLabel?: string;
+  calculatorHref?: string;
   showEmail?: boolean;
   showCalculator?: boolean;
   showPhone?: boolean;
@@ -13,6 +16,8 @@ interface CTASectionProps {
 export default function CTASection({
   title = "Bereit für Ihre stressfreie Wohnungsabgabe?",
   subtitle = "Berechnen Sie jetzt Ihren Richtpreis oder kontaktieren Sie uns direkt.",
+  calculatorLabel = "Richtpreis berechnen",
+  calculatorHref = "/umzugsreinigung#offer",
   showEmail = true,
   showCalculator = true,
   showPhone = true,
@@ -28,13 +33,13 @@ export default function CTASection({
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           {showCalculator && (
             <OfferScrollLink
-              href="/umzugsreinigung#offer"
+              href={calculatorHref}
               className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-colors w-full sm:w-auto justify-center"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              Richtpreis berechnen
+              {calculatorLabel}
             </OfferScrollLink>
           )}
           {showEmail && (

@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import UmzugsreinigungPageContent from "@/components/UmzugsreinigungPageContent";
 
 export const metadata: Metadata = {
-  title: "Umzugsreinigung mit Abgabegarantie in der Schweiz",
+  title: "Reinigung in Zürich & Umgebung | Umzug, Büro, Privat, Bau",
   description:
-    "Professionelle Umzugsreinigung mit Abgabegarantie. Wir begleiten den Übergabetermin und klären reinigungsbezogene Punkte direkt. Richtpreis in 60 Sekunden, Einsätze in der ganzen Schweiz.",
+    "Online Anfrage für Umzugsreinigung, Büroreinigung, Privatreinigung, Baureinigung, Fensterreinigung und weitere Reinigungsarbeiten in Zürich und Umgebung. Umzugsreinigung mit Abgabegarantie.",
   keywords:
-    "Umzugsreinigung Schweiz, Endreinigung Schweiz, Abgabegarantie, Umzugsreinigung Zürich, Umzugsreinigung Bern, Umzugsreinigung Luzern",
+    "Reinigungsfirma Zürich, Umzugsreinigung Zürich, Büroreinigung Zürich, Privatreinigung, Baureinigung, Fensterreinigung",
   alternates: { canonical: "https://www.clean-24.ch" },
 };
 
 export default function HomePage() {
-  return <UmzugsreinigungPageContent />;
+  return <UmzugsreinigungPageContent variant="home" />;
 }

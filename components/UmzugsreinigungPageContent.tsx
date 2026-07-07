@@ -15,13 +15,112 @@ import IncludedServices from "@/components/IncludedServices";
 import ChecklistLeadMagnet from "@/components/ChecklistLeadMagnet";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
 import RevealOnScroll from "@/components/RevealOnScroll";
+import ServiceOverview from "@/components/ServiceOverview";
+
+type PageVariant = "umzugsreinigung" | "home";
+
+/**
+ * Copy that differs between the generalized homepage ("home": Clean24 as
+ * Reinigungsservice für alle Kategorien) and the dedicated Umzugsreinigung
+ * sales/SEO page ("umzugsreinigung": unchanged, conversion-specific).
+ * Abgabegarantie is only ever claimed for Umzugsreinigung.
+ */
+const VARIANT_COPY = {
+  umzugsreinigung: {
+    badge: "Mit Abgabegarantie · Heute aktiv",
+    heroLead: "Umzugsreinigung mit",
+    heroGradient: "Abgabegarantie",
+    heroTail: "in der Schweiz.",
+    heroP1:
+      "Wir reinigen Ihre Wohnung nach Schweizer Standard und begleiten den Übergabetermin vor Ort. Reinigungsbezogene Punkte klären wir direkt mit Verwaltung oder Vermieter.",
+    heroP2:
+      "Einsätze in der ganzen Schweiz nach Verfügbarkeit. Zürich, Bern, Basel, Luzern, St. Gallen und weitere Regionen auf Anfrage.",
+    primaryCta: "Kostenlose Offerte erhalten",
+    secondaryCta: "Richtpreis in 60 Sekunden berechnen",
+    ctaMicrocopy:
+      "In 60 Sekunden Anfrage starten · Richtpreis berechnen und Offerte anfragen · Ihre Angaben werden geprüft – anschliessend erhalten Sie eine klare Rückmeldung.",
+    cardHeading: (
+      <>
+        Ihre Wohnungsabgabe –<br />stressfrei vorbereitet.
+      </>
+    ),
+    cardBullets: [
+      { title: "Richtpreis nach Angaben", sub: "Sofort sichtbar im Online-Rechner." },
+      { title: "Abgabegarantie", sub: "Direkte Klärung reinigungsbezogener Punkte." },
+      { title: "Termin nach Verfügbarkeit", sub: "Express 24–48h auf Anfrage." },
+      { title: "Offerte nach Prüfung", sub: "Kostenlos und unverbindlich." },
+      { title: "Erreichbar per Telefon & E-Mail", sub: "044 516 19 23 · info@clean-24.ch" },
+    ],
+    cardMiniList: [
+      "Richtpreis nach Angaben",
+      "Offerte nach Prüfung",
+      "Sofortige Eingangsbestätigung",
+      "Strukturierte Rückmeldung",
+    ],
+    serviceAreaTitle: "Umzugsreinigung in der ganzen Schweiz",
+    trustTitle: "Sechs Gründe, die bei der Abgabe zählen.",
+    trustSubtitle:
+      "Wir sind auf Umzugsreinigungen spezialisiert – mit klaren Prozessen, sofortiger Bestätigung und Begleitung bis zur erfolgreichen Wohnungsabgabe.",
+    ctaSectionTitle: "Bereit für Ihre stressfreie Wohnungsabgabe?",
+    ctaSectionSubtitle:
+      "Berechnen Sie jetzt Ihren Richtpreis oder kontaktieren Sie uns direkt.",
+    ctaSectionCalculatorLabel: "Richtpreis berechnen",
+  },
+  home: {
+    badge: "Ihr Reinigungsservice · Heute aktiv",
+    heroLead: "Reinigung in",
+    heroGradient: "Zürich und Umgebung",
+    heroTail: "– für Umzug, Privat, Büro & mehr.",
+    heroP1:
+      "Wählen Sie die passende Reinigung und senden Sie uns Ihre Anfrage online. Umzugsreinigungen führen wir mit Abgabegarantie durch – inklusive Begleitung beim Übergabetermin.",
+    heroP2:
+      "Bei Umzugsreinigungen erhalten Sie eine Richtpreis-Spanne; andere Reinigungen prüfen wir individuell. Einsätze in der ganzen Schweiz nach Verfügbarkeit.",
+    primaryCta: "Reinigung anfragen",
+    secondaryCta: "Richtpreis oder individuelle Offerte erhalten",
+    ctaMicrocopy:
+      "In 60 Sekunden Anfrage starten · Kategorie wählen und Anfrage senden · Ihre Angaben werden geprüft – anschliessend erhalten Sie eine klare Rückmeldung.",
+    cardHeading: (
+      <>
+        Ihre Reinigungsanfrage –<br />strukturiert erledigt.
+      </>
+    ),
+    cardBullets: [
+      { title: "Richtpreis bei Umzugsreinigung", sub: "Sofort sichtbar im Online-Rechner." },
+      { title: "Abgabegarantie bei Umzugsreinigung", sub: "Direkte Klärung reinigungsbezogener Punkte." },
+      { title: "Individuelle Offerte", sub: "Für Privat-, Büro-, Bau- und Spezialreinigungen." },
+      { title: "Termin nach Verfügbarkeit", sub: "Express 24–48h auf Anfrage." },
+      { title: "Erreichbar per Telefon & E-Mail", sub: "044 516 19 23 · info@clean-24.ch" },
+    ],
+    cardMiniList: [
+      "Richtpreis oder individuelle Offerte",
+      "Fotos optional hochladen",
+      "Sofortige Eingangsbestätigung",
+      "Strukturierte Rückmeldung",
+    ],
+    serviceAreaTitle: "Reinigung in der ganzen Schweiz",
+    trustTitle: "Sechs Gründe für Clean24.",
+    trustSubtitle:
+      "Klare Prozesse, sofortige Bestätigung und strukturierte Rückmeldung – bei Umzugsreinigungen inklusive Abgabegarantie und Begleitung bis zur Wohnungsabgabe.",
+    ctaSectionTitle: "Bereit für Ihre Reinigungsanfrage?",
+    ctaSectionSubtitle:
+      "Wählen Sie die passende Reinigung und senden Sie uns Ihre Anfrage online – Richtpreis oder individuelle Offerte.",
+    ctaSectionCalculatorLabel: "Reinigung anfragen",
+  },
+} as const;
 
 /**
  * Shared body of the premium Clean24 sales page.
- * Rendered by both `/` (homepage) and `/umzugsreinigung` so the new design is
- * the main public experience without duplicating JSX.
+ * Rendered by both `/` (homepage, variant "home": generalized Reinigungsservice
+ * copy + service overview) and `/umzugsreinigung` (variant "umzugsreinigung":
+ * the unchanged Umzugsreinigung sales page) without duplicating JSX.
  */
-export default function UmzugsreinigungPageContent() {
+export default function UmzugsreinigungPageContent({
+  variant = "umzugsreinigung",
+}: {
+  variant?: PageVariant;
+}) {
+  const copy = VARIANT_COPY[variant];
+
   return (
     <>
       <RevealOnScroll />
@@ -38,22 +137,20 @@ export default function UmzugsreinigungPageContent() {
             <div data-reveal>
               <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-blue-200 text-xs font-medium mb-6">
                 <span className="c24-live-dot" />
-                Mit Abgabegarantie · Heute aktiv
+                {copy.badge}
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.4rem] font-bold leading-[1.08] tracking-tight mb-5">
-                Umzugsreinigung mit{" "}
+                {copy.heroLead}{" "}
                 <span className="bg-gradient-to-r from-blue-300 via-blue-400 to-emerald-300 bg-clip-text text-transparent">
-                  Abgabegarantie
+                  {copy.heroGradient}
                 </span>{" "}
-                in der Schweiz.
+                {copy.heroTail}
               </h1>
               <p className="text-base sm:text-lg text-blue-100/85 leading-relaxed mb-3 max-w-xl">
-                Wir reinigen Ihre Wohnung nach Schweizer Standard und begleiten den Übergabetermin
-                vor Ort. Reinigungsbezogene Punkte klären wir direkt mit Verwaltung oder Vermieter.
+                {copy.heroP1}
               </p>
               <p className="text-sm text-blue-200/70 mb-8 max-w-xl">
-                Einsätze in der ganzen Schweiz nach Verfügbarkeit. Zürich, Bern, Basel, Luzern,
-                St. Gallen und weitere Regionen auf Anfrage.
+                {copy.heroP2}
               </p>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-3">
@@ -61,7 +158,7 @@ export default function UmzugsreinigungPageContent() {
                   href="#offer"
                   className="group inline-flex items-center justify-center gap-3 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 text-white font-bold text-base md:text-lg px-9 py-5 rounded-2xl transition-all shadow-[0_18px_40px_-12px_rgba(37,99,235,0.55)] hover:shadow-[0_22px_48px_-12px_rgba(59,130,246,0.7)] hover:-translate-y-0.5 ring-1 ring-white/15"
                 >
-                  Kostenlose Offerte erhalten
+                  {copy.primaryCta}
                   <svg
                     className="w-5 h-5 transition-transform group-hover:translate-x-1"
                     fill="none"
@@ -76,12 +173,11 @@ export default function UmzugsreinigungPageContent() {
                   href="#offer"
                   className="inline-flex items-center justify-center gap-2 text-blue-200 hover:text-white font-medium text-sm transition-colors underline decoration-blue-400/50 underline-offset-4 hover:decoration-white"
                 >
-                  Richtpreis in 60 Sekunden berechnen
+                  {copy.secondaryCta}
                 </OfferScrollLink>
               </div>
               <p className="text-xs text-blue-200/70 mb-8 max-w-md leading-relaxed">
-                In 60 Sekunden Anfrage starten · Richtpreis berechnen und Offerte anfragen ·
-                Ihre Angaben werden geprüft – anschliessend erhalten Sie eine klare Rückmeldung.
+                {copy.ctaMicrocopy}
               </p>
 
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-blue-200/80">
@@ -114,17 +210,11 @@ export default function UmzugsreinigungPageContent() {
                   <span className="h-px flex-1 bg-gradient-to-r from-white/15 to-transparent" />
                 </div>
                 <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight leading-tight mb-6">
-                  Ihre Wohnungsabgabe –<br />stressfrei vorbereitet.
+                  {copy.cardHeading}
                 </h2>
 
                 <ul className="space-y-3.5 mb-6">
-                  {[
-                    { title: "Richtpreis nach Angaben", sub: "Sofort sichtbar im Online-Rechner." },
-                    { title: "Abgabegarantie", sub: "Direkte Klärung reinigungsbezogener Punkte." },
-                    { title: "Termin nach Verfügbarkeit", sub: "Express 24–48h auf Anfrage." },
-                    { title: "Offerte nach Prüfung", sub: "Kostenlos und unverbindlich." },
-                    { title: "Erreichbar per Telefon & E-Mail", sub: "044 516 19 23 · info@clean-24.ch" },
-                  ].map((bullet) => (
+                  {copy.cardBullets.map((bullet) => (
                     <li key={bullet.title} className="flex items-start gap-3">
                       <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center mt-0.5">
                         <svg className="w-3 h-3 text-emerald-300" fill="currentColor" viewBox="0 0 20 20">
@@ -157,12 +247,7 @@ export default function UmzugsreinigungPageContent() {
                     </OfferScrollLink>
                   </div>
                   <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] text-blue-100/85">
-                    {[
-                      "Richtpreis nach Angaben",
-                      "Offerte nach Prüfung",
-                      "Sofortige Eingangsbestätigung",
-                      "Strukturierte Rückmeldung",
-                    ].map((item) => (
+                    {copy.cardMiniList.map((item) => (
                       <li key={item} className="flex items-start gap-1.5">
                         <span className="mt-1 w-1 h-1 rounded-full bg-emerald-400 flex-shrink-0" />
                         <span className="leading-snug">{item}</span>
@@ -204,11 +289,14 @@ export default function UmzugsreinigungPageContent() {
         </div>
       </section>
 
+      {/* ===== Service overview (home only): all cleaning categories ===== */}
+      {variant === "home" && <ServiceOverview />}
+
       {/* ===== Trust badges (Warum Clean24) ===== */}
-      <TrustBadges />
+      <TrustBadges title={copy.trustTitle} subtitle={copy.trustSubtitle} />
 
       {/* ===== Region chips ===== */}
-      <ServiceAreaChips />
+      <ServiceAreaChips title={copy.serviceAreaTitle} />
 
       {/* ===== Abgabegarantie einfach erklärt ===== */}
       <GuaranteeExplainer />
@@ -238,7 +326,12 @@ export default function UmzugsreinigungPageContent() {
       {/* ===== FAQ ===== */}
       <FAQ />
 
-      <CTASection />
+      <CTASection
+        title={copy.ctaSectionTitle}
+        subtitle={copy.ctaSectionSubtitle}
+        calculatorLabel={copy.ctaSectionCalculatorLabel}
+        calculatorHref="#offer"
+      />
 
       <StickyMobileCTA />
     </>

@@ -102,7 +102,11 @@ export default function LocalSeoPage({ city, slug, headline, intro }: LocalSeoPa
         </div>
       </section>
 
-      <FAQ items={cityFaqs} title={`Fragen zur Umzugsreinigung in ${city}`} />
+      <FAQ
+        items={cityFaqs}
+        title={`Fragen zur Umzugsreinigung in ${city}`}
+        subtitle="Antworten auf die häufigsten Fragen zur Umzugsreinigung."
+      />
 
       <CTASection
         title={`Ihre stressfreie Wohnungsabgabe in ${city}`}

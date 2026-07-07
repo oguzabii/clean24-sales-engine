@@ -5,8 +5,8 @@ const badges = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.955 11.955 0 01.068 12.124C.068 18.403 5.082 23.5 12 23.5s11.932-5.097 11.932-11.376A11.955 11.955 0 0120.402 6 11.959 11.959 0 0112 2.714z" />
       </svg>
     ),
-    title: "Abgabegarantie",
-    desc: "Wir begleiten die Wohnungsabgabe und klären reinigungsbezogene Beanstandungen direkt – falls nötig auch im Rahmen einer kostenlosen Nachbesserung.",
+    title: "Abgabegarantie bei Umzugsreinigung",
+    desc: "Bei Umzugsreinigungen begleiten wir die Wohnungsabgabe und klären reinigungsbezogene Beanstandungen direkt – falls nötig auch im Rahmen einer kostenlosen Nachbesserung.",
   },
   {
     icon: (
@@ -15,7 +15,7 @@ const badges = [
       </svg>
     ),
     title: "Richtpreis in 60 Sekunden",
-    desc: "Transparente Kalkulation ohne versteckte Kosten. Fixpreis nach Prüfung Ihrer Angaben.",
+    desc: "Bei Umzugsreinigungen sofortige Richtpreis-Spanne, andere Reinigungen prüfen wir individuell. Fixpreis bzw. Offerte nach Prüfung Ihrer Angaben.",
   },
   {
     icon: (
@@ -24,7 +24,7 @@ const badges = [
       </svg>
     ),
     title: "Schweizweit im Einsatz",
-    desc: "Unser Team operiert von Dietikon aus und ist in der ganzen Schweiz für Umzugsreinigungen unterwegs – Verfügbarkeit je nach Region und Termin.",
+    desc: "Unser Team operiert von Dietikon aus und ist in der ganzen Schweiz für Reinigungseinsätze unterwegs – Verfügbarkeit je nach Region und Termin.",
   },
   {
     icon: (
@@ -33,7 +33,7 @@ const badges = [
       </svg>
     ),
     title: "Geprüfte Qualität",
-    desc: "Systematische Endreinigung nach Schweizer Abgabestandards – mit Abschlussbegehung.",
+    desc: "Systematische Reinigung nach Schweizer Standard – bei Umzugsreinigungen mit Abschlussbegehung.",
   },
   {
     icon: (
@@ -55,7 +55,15 @@ const badges = [
   },
 ];
 
-export default function TrustBadges() {
+interface TrustBadgesProps {
+  title?: string;
+  subtitle?: string;
+}
+
+export default function TrustBadges({
+  title = "Sechs Gründe, die bei der Abgabe zählen.",
+  subtitle = "Wir sind auf Umzugsreinigungen spezialisiert – mit klaren Prozessen, sofortiger Bestätigung und Begleitung bis zur erfolgreichen Wohnungsabgabe.",
+}: TrustBadgesProps) {
   return (
     <section className="py-20 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -64,12 +72,9 @@ export default function TrustBadges() {
             Warum Clean24
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight mb-3">
-            Sechs Gründe, die bei der Abgabe zählen.
+            {title}
           </h2>
-          <p className="text-gray-500 leading-relaxed">
-            Wir sind auf Umzugsreinigungen spezialisiert – mit klaren Prozessen, sofortiger Bestätigung
-            und Begleitung bis zur erfolgreichen Wohnungsabgabe.
-          </p>
+          <p className="text-gray-500 leading-relaxed">{subtitle}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {badges.map((badge) => (

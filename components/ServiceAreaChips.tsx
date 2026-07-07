@@ -1,6 +1,12 @@
 import { SERVICE_AREAS } from "@/lib/constants";
 
-export default function ServiceAreaChips() {
+interface ServiceAreaChipsProps {
+  title?: string;
+}
+
+export default function ServiceAreaChips({
+  title = "Umzugsreinigung in der ganzen Schweiz",
+}: ServiceAreaChipsProps) {
   return (
     <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -9,7 +15,7 @@ export default function ServiceAreaChips() {
             Einsatzgebiet
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 tracking-tight">
-            Umzugsreinigung in der ganzen Schweiz
+            {title}
           </h2>
           <p className="text-gray-500 text-sm mb-8 max-w-xl mx-auto leading-relaxed">
             Verfügbarkeit je nach Region, Termin und Objekt. Weitere Regionen auf Anfrage –
