@@ -12,6 +12,7 @@ import {
   type CustomerEmailDeliveryStatus,
 } from "@/lib/mail/emails";
 import { COMPANY } from "@/lib/constants";
+import { MOVE_OUT_CATEGORY, resolveServiceCategory } from "@/lib/service-categories";
 import { validateDiscountCode } from "@/lib/discount-validate";
 import { applyDiscountToRange } from "@/lib/discount";
 
@@ -49,16 +50,18 @@ function sanitizeAttachments(value: unknown): LeadAttachmentRef[] | undefined {
   return refs.length > 0 ? refs : undefined;
 }
 
-const REQUIRED_FIELDS: (keyof LeadFormData)[] = [
+/** Always required — every category needs contact + address data. */
+const REQUIRED_BASE_FIELDS: (keyof LeadFormData)[] = [
   "customer_name",
   "email",
   "phone",
   "address",
   "city",
   "zip",
-  "apartment_size",
-  "cleaning_date",
 ];
+
+/** Additionally required for move_out_cleaning only (drive the Richtpreis). */
+const REQUIRED_MOVE_OUT_FIELDS: (keyof LeadFormData)[] = ["apartment_size", "cleaning_date"];
 
 export async function POST(request: NextRequest) {
   let body: Partial<LeadFormData>;
@@ -69,7 +72,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ungültige Anfrage." }, { status: 400 });
   }
 
-  const missing = REQUIRED_FIELDS.filter((f) => !body[f]);
+  // Missing/unknown category → move_out_cleaning (legacy submits unchanged).
+  const category = resolveServiceCategory(
+    typeof body.service_category === "string" ? body.service_category : undefined
+  );
+  const isMoveOut = category.value === MOVE_OUT_CATEGORY;
+
+  const requiredFields = isMoveOut
+    ? [...REQUIRED_BASE_FIELDS, ...REQUIRED_MOVE_OUT_FIELDS]
+    : REQUIRED_BASE_FIELDS;
+  const missing = requiredFields.filter((f) => !body[f]);
   if (missing.length > 0) {
     return NextResponse.json(
       { error: `Pflichtfelder fehlen: ${missing.join(", ")}` },
@@ -81,6 +93,7 @@ export async function POST(request: NextRequest) {
 
   let payload = buildLeadPayload({
     ...data,
+    service_category: category.value,
     addons: data.addons ?? {},
     express: data.express ?? false,
     attachments: sanitizeAttachments(data.attachments),
@@ -89,10 +102,16 @@ export async function POST(request: NextRequest) {
   // ---- Discount / Rabattcode (validated server-side via Lead Autopilot) ----
   // Base pricing is never changed; a valid code only reduces the displayed
   // Richtpreis range. Invalid/unknown codes are silently ignored so the
-  // no-code flow stays identical.
-  const submittedCode = (data.discount_code ?? "").trim();
+  // no-code flow stays identical. Manual-review categories have no Richtpreis
+  // → codes are ignored entirely (never validated, never forwarded).
+  const submittedCode =
+    payload.pricing_mode === "automatic_range" ? (data.discount_code ?? "").trim() : "";
   const discount = submittedCode ? await validateDiscountCode(submittedCode) : null;
-  if (discount) {
+  if (
+    discount &&
+    payload.estimated_price_min != null &&
+    payload.estimated_price_max != null
+  ) {
     const origMin = payload.estimated_price_min;
     const origMax = payload.estimated_price_max;
     const ranged = applyDiscountToRange(origMin, origMax, discount);

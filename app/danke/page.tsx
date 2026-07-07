@@ -8,7 +8,31 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function DankePage() {
+const MOVE_OUT_STEPS = [
+  { step: "1", text: "Eingangsbestätigung und Richtpreis per E-Mail." },
+  { step: "2", text: "Prüfung Ihrer Angaben durch Clean24." },
+  { step: "3", text: "Rückmeldung mit Fixpreis und Terminvorschlag." },
+  { step: "4", text: "Reinigung mit Abgabegarantie nach Terminbestätigung." },
+];
+
+const MANUAL_REVIEW_STEPS = [
+  { step: "1", text: "Eingangsbestätigung per E-Mail." },
+  { step: "2", text: "Individuelle Prüfung Ihrer Angaben durch Clean24." },
+  { step: "3", text: "Rückmeldung mit einer passenden Offerte." },
+  { step: "4", text: "Ausführung nach Terminbestätigung." },
+];
+
+export default async function DankePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ m?: string }>;
+}) {
+  // ?m=review → non-move-out category: neutral copy without Richtpreis /
+  // Abgabegarantie promises. Default keeps the Umzugsreinigung wording.
+  const { m } = await searchParams;
+  const manualReview = m === "review";
+  const steps = manualReview ? MANUAL_REVIEW_STEPS : MOVE_OUT_STEPS;
+
   return (
     <section className="min-h-screen bg-gray-50 flex items-center justify-center py-20 px-4">
       <div className="max-w-xl w-full text-center">
@@ -21,22 +45,30 @@ export default function DankePage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-4">
           Vielen Dank für Ihre Anfrage!
         </h1>
-        <p className="text-gray-600 mb-3 leading-relaxed">
-          Ihre Anfrage wurde erhalten. Wir haben Ihnen eine <strong>Eingangsbestätigung mit Ihrem Richtpreis</strong> per E-Mail gesendet – bitte prüfen Sie ggf. auch den Spam-Ordner.
-        </p>
-        <p className="text-gray-600 mb-8 leading-relaxed">
-          Clean24 prüft Ihre Angaben und meldet sich anschliessend mit <strong>Fixpreis und Terminvorschlag</strong>. Bei Fragen erreichen Sie uns telefonisch unter <strong>044 516 19 23</strong> oder per E-Mail an <strong>info@clean-24.ch</strong>.
-        </p>
+        {manualReview ? (
+          <>
+            <p className="text-gray-600 mb-3 leading-relaxed">
+              Ihre Anfrage wurde übermittelt. Wir prüfen die Angaben und melden uns mit einer <strong>individuellen Offerte</strong>.
+            </p>
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              Sie erhalten eine Eingangsbestätigung per E-Mail – bitte prüfen Sie ggf. auch den Spam-Ordner. Bei Fragen erreichen Sie uns telefonisch unter <strong>044 516 19 23</strong> oder per E-Mail an <strong>info@clean-24.ch</strong>.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-gray-600 mb-3 leading-relaxed">
+              Ihre Anfrage wurde erhalten. Wir haben Ihnen eine <strong>Eingangsbestätigung mit Ihrem Richtpreis</strong> per E-Mail gesendet – bitte prüfen Sie ggf. auch den Spam-Ordner.
+            </p>
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              Clean24 prüft Ihre Angaben und meldet sich anschliessend mit <strong>Fixpreis und Terminvorschlag</strong>. Bei Fragen erreichen Sie uns telefonisch unter <strong>044 516 19 23</strong> oder per E-Mail an <strong>info@clean-24.ch</strong>.
+            </p>
+          </>
+        )}
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
           <h2 className="font-semibold text-gray-900 mb-4">So geht es weiter</h2>
           <div className="space-y-3 text-left">
-            {[
-              { step: "1", text: "Eingangsbestätigung und Richtpreis per E-Mail." },
-              { step: "2", text: "Prüfung Ihrer Angaben durch Clean24." },
-              { step: "3", text: "Rückmeldung mit Fixpreis und Terminvorschlag." },
-              { step: "4", text: "Reinigung mit Abgabegarantie nach Terminbestätigung." },
-            ].map((item) => (
+            {steps.map((item) => (
               <div key={item.step} className="flex items-start gap-3">
                 <span className="w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
                   {item.step}

@@ -11,6 +11,7 @@ import {
   APARTMENT_SIZE_LABELS,
   HOUSE_SURCHARGE,
 } from "@/lib/constants";
+import { OBJECT_TYPE_LABELS, PRICING_MODE_LABELS } from "@/lib/service-categories";
 import { CHECKLIST_SECTIONS, CHECKLIST_PDF_FILENAME } from "./checklist-data";
 import type { LeadPayload } from "@/lib/lead-payload";
 
@@ -115,7 +116,21 @@ const RECURRENCE_LABELS: Record<string, string> = {
   biweekly: "Alle 2 Wochen",
   monthly: "Monatlich",
   other: "Andere",
+  // Category-flow inquiry options (non-move-out).
+  once: "Einmalig",
+  by_agreement: "Nach Vereinbarung",
 };
+
+/** Manual-review inquiry (every category except move_out_cleaning)? */
+function isManualReview(payload: LeadPayload): boolean {
+  return payload.pricing_mode === "manual_review";
+}
+
+/** Human-readable Objektart for non-move-out inquiries. */
+function objectTypeLabel(payload: LeadPayload): string | null {
+  if (!payload.object_type) return null;
+  return OBJECT_TYPE_LABELS[payload.object_type] ?? payload.object_type;
+}
 
 const DIRTINESS_LABELS: Record<string, string> = {
   low: "Wenig schmutzig",
@@ -195,6 +210,8 @@ function wrapHtml(opts: {
   previewText: string;
   heading: string;
   bodyHtml: string;
+  /** Header tagline — default keeps the Umzugsreinigung branding. */
+  tagline?: string;
 }): string {
   return `<!DOCTYPE html>
 <html lang="de">
@@ -212,7 +229,9 @@ function wrapHtml(opts: {
     <div style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.01em;">${escapeHtml(
       COMPANY.name
     )}</div>
-    <div style="color:#93c5fd;font-size:12px;margin-top:2px;">Umzugsreinigung mit Abgabegarantie</div>
+    <div style="color:#93c5fd;font-size:12px;margin-top:2px;">${escapeHtml(
+      opts.tagline ?? "Umzugsreinigung mit Abgabegarantie"
+    )}</div>
   </div>
   <div style="background:#ffffff;padding:28px;">
     <h1 style="margin:0 0 18px;font-size:20px;font-weight:700;color:#0f172a;letter-spacing:-0.01em;">${escapeHtml(
@@ -240,9 +259,11 @@ export function buildLeadNotificationEmail(
   }
 ): EmailContent {
   const subject = "Neue Anfrage über clean-24.ch";
+  const manualReview = isManualReview(payload);
 
-  const sizeLabel =
-    APARTMENT_SIZE_LABELS[payload.apartment_size] ?? payload.apartment_size;
+  const sizeLabel = payload.apartment_size
+    ? APARTMENT_SIZE_LABELS[payload.apartment_size] ?? payload.apartment_size
+    : null;
 
   const addonLabels = payload.addons
     .filter((key) => key !== "express")
@@ -250,8 +271,12 @@ export function buildLeadNotificationEmail(
 
   const address = payload.address;
 
-  // [label, value] rows; null/empty values are skipped.
+  // [label, value] rows; null/empty values are skipped. Move-out-only rows
+  // (Zusatzleistungen, Express, Richtpreis, Abgabe-Felder) never render for
+  // manual-review inquiries.
   const rows: [string, string | null | undefined][] = [
+    ["Kategorie", payload.service_category_label],
+    ["Preis-Modus", PRICING_MODE_LABELS[payload.pricing_mode]],
     ["Name", payload.customer_name],
     ["E-Mail", payload.email],
     ["Telefon", payload.phone],
@@ -259,23 +284,27 @@ export function buildLeadNotificationEmail(
     ["PLZ", payload.zip],
     ["Adresse", address],
     ["Wohnungsgrösse", sizeLabel],
-    ["Objektart", propertyTypeLabel(payload)],
-    ["Bodenfläche (m²)", payload.floor_area_m2 ?? payload.square_meters],
+    ["Objektart", manualReview ? objectTypeLabel(payload) : propertyTypeLabel(payload)],
+    [manualReview ? "Fläche (m²)" : "Bodenfläche (m²)", payload.floor_area_m2 ?? payload.square_meters],
     ["Anzahl Fenster", payload.windows_count],
-    ["Reinigungsdatum", formatDate(payload.cleaning_date)],
+    manualReview
+      ? ["Gewünschter Termin", formatDate(payload.preferred_date ?? payload.cleaning_date)]
+      : ["Reinigungsdatum", formatDate(payload.cleaning_date)],
     ["Abgabetermin", formatDate(payload.handover_date)],
     ["Abgabezeit", formatHandoverTime(payload)],
     ["Abgabegarantie gewünscht", guaranteeLabel(payload)],
     ["Wiederholung", mappedLabel(payload.recurrence, RECURRENCE_LABELS)],
     ["Verschmutzungsgrad", mappedLabel(payload.dirtiness_level, DIRTINESS_LABELS)],
     ["Wichtiger", mappedLabel(payload.priority_preference, PRIORITY_LABELS)],
-    ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : "–"],
-    ["Express", payload.express ? "Ja (+15%)" : "Nein"],
-    ["Bemerkungen", payload.notes],
+    ["Zusatzleistungen", manualReview ? null : addonLabels.length ? addonLabels.join(", ") : "–"],
+    ["Express", manualReview ? null : payload.express ? "Ja (+15%)" : "Nein"],
+    [manualReview ? "Beschreibung / Bemerkungen" : "Bemerkungen", payload.notes],
     ["Fotos", attachmentsCountLabel(payload)],
     [
       "Richtpreis",
-      `CHF ${payload.estimated_price_min} – CHF ${payload.estimated_price_max}`,
+      payload.estimated_price_min != null && payload.estimated_price_max != null
+        ? `CHF ${payload.estimated_price_min} – CHF ${payload.estimated_price_max}`
+        : null,
     ],
     ["Quelle", payload.source],
     ["Seite", payload.page_path],
@@ -319,7 +348,13 @@ export function buildLeadNotificationEmail(
 
   const bodyHtml = `
     <p style="margin:0 0 16px;color:#374151;font-size:14px;">
-      Über das Website-Formular ist eine neue Umzugsreinigungs-Anfrage eingegangen.
+      ${
+        manualReview
+          ? `Über das Website-Formular ist eine neue Anfrage eingegangen (Kategorie: ${escapeHtml(
+              payload.service_category_label
+            )}).`
+          : "Über das Website-Formular ist eine neue Umzugsreinigungs-Anfrage eingegangen."
+      }
     </p>
     <table style="width:100%;border-collapse:collapse;border:1px solid #f1f5f9;border-radius:8px;overflow:hidden;">
       <tbody>${rowsHtml}</tbody>
@@ -339,9 +374,12 @@ export function buildLeadNotificationEmail(
   return {
     subject,
     html: wrapHtml({
-      previewText: `Neue Anfrage von ${payload.customer_name} (${sizeLabel})`,
+      previewText: `Neue Anfrage von ${payload.customer_name} (${
+        manualReview ? payload.service_category_label : sizeLabel ?? "–"
+      })`,
       heading: "Neue Website-Anfrage",
       bodyHtml,
+      tagline: manualReview ? "Ihr Reinigungsprofi" : undefined,
     }),
     text,
   };
@@ -447,10 +485,17 @@ export function buildChecklistEmail(): EmailContent {
 /* ------------------------------------------------------------------ */
 
 export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailContent {
+  // Manual-review categories get their own neutral confirmation — no
+  // Richtpreis, no Umzugsreinigung/Abgabegarantie wording.
+  if (isManualReview(payload)) {
+    return buildManualReviewConfirmationEmail(payload);
+  }
+
   const subject = "Ihre Anfrage bei Clean24 – Richtpreis erhalten";
 
-  const sizeLabel =
-    APARTMENT_SIZE_LABELS[payload.apartment_size] ?? payload.apartment_size;
+  const sizeLabel = payload.apartment_size
+    ? APARTMENT_SIZE_LABELS[payload.apartment_size] ?? payload.apartment_size
+    : null;
   const addonLabels = payload.addons
     .filter((key) => key !== "express")
     .map((key) => ADDONS_BY_KEY[key]?.label ?? key);
@@ -458,10 +503,11 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
   const greeting = payload.customer_name
     ? `Guten Tag ${payload.customer_name},`
     : "Guten Tag,";
-  const priceText = `CHF ${payload.estimated_price_min} – CHF ${payload.estimated_price_max}`;
+  const priceText = `CHF ${payload.estimated_price_min ?? 0} – CHF ${payload.estimated_price_max ?? 0}`;
   const discount = discountSummary(payload);
 
   const rows: [string, string | null | undefined][] = [
+    ["Kategorie", payload.service_category_label],
     ["Wohnung / Zimmer", sizeLabel],
     ["Objektart", propertyTypeLabel(payload)],
     ["Adresse", payload.address],
@@ -572,6 +618,99 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
       previewText: `Ihr Richtpreis: ${priceText} – wir prüfen Ihre Angaben und melden uns mit Fixpreis und Termin.`,
       heading: "Ihre Anfrage ist eingegangen",
       bodyHtml,
+    }),
+    text,
+  };
+}
+
+/**
+ * Customer confirmation for manual-review categories (everything except
+ * move_out_cleaning): neutral wording, no Richtpreis, no Abgabegarantie.
+ */
+function buildManualReviewConfirmationEmail(payload: LeadPayload): EmailContent {
+  const subject = "Ihre Anfrage bei Clean24 – Eingang bestätigt";
+  const greeting = payload.customer_name
+    ? `Guten Tag ${payload.customer_name},`
+    : "Guten Tag,";
+
+  const rows: [string, string | null | undefined][] = [
+    ["Kategorie", payload.service_category_label],
+    ["Objektart", objectTypeLabel(payload)],
+    ["Adresse", payload.address],
+    ["Ort / PLZ", [payload.zip, payload.city].filter(Boolean).join(" ")],
+    ["Fläche (m²)", payload.floor_area_m2 ?? payload.square_meters],
+    ["Gewünschter Termin", formatDate(payload.preferred_date ?? payload.cleaning_date)],
+    ["Wiederholung", mappedLabel(payload.recurrence, RECURRENCE_LABELS)],
+    ["Beschreibung / Bemerkungen", payload.notes],
+    ["Fotos", attachmentsCountLabel(payload)],
+  ];
+  const presentRows = rows.filter(
+    (r): r is [string, string] => r[1] != null && String(r[1]).trim() !== ""
+  );
+  const rowsHtml = presentRows
+    .map(
+      ([label, value]) => `
+      <tr>
+        <td style="padding:7px 12px;border-bottom:1px solid #f1f5f9;color:#6b7280;font-size:13px;white-space:nowrap;">${escapeHtml(
+          label
+        )}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid #f1f5f9;color:#111827;font-size:14px;font-weight:500;">${escapeHtml(
+          String(value)
+        )}</td>
+      </tr>`
+    )
+    .join("");
+
+  const bodyHtml = `
+    <p style="margin:0 0 14px;color:#374151;font-size:14px;">${escapeHtml(greeting)}</p>
+    <p style="margin:0 0 18px;color:#374151;font-size:14px;">
+      vielen Dank für Ihre Anfrage über clean-24.ch. Wir prüfen die Angaben und melden uns
+      mit einer passenden Offerte.
+    </p>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #f1f5f9;border-radius:8px;overflow:hidden;">
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <div style="margin:18px 0;padding:18px;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;text-align:center;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:#2563eb;font-weight:600;">Individuelle Prüfung</div>
+      <p style="margin:6px 0 0;color:#374151;font-size:14px;">
+        Für diese Kategorie prüfen wir Ihre Anfrage individuell und melden uns mit einer
+        passenden Offerte.
+      </p>
+    </div>
+    <div style="padding:18px;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;">
+      <p style="margin:0 0 8px;color:#1e40af;font-size:14px;font-weight:600;">Fragen zu Ihrer Anfrage?</p>
+      <p style="margin:0;color:#374151;font-size:13px;">
+        Bei Fragen erreichen Sie uns telefonisch unter
+        <a href="tel:${COMPANY.phone.replace(/\s/g, "")}" style="color:#2563eb;text-decoration:none;font-weight:600;">044 516 19 23</a>
+        oder per E-Mail an
+        <a href="mailto:${COMPANY.email}" style="color:#2563eb;text-decoration:none;font-weight:600;">${escapeHtml(COMPANY.email)}</a>.
+      </p>
+    </div>`;
+
+  const text = [
+    "Ihre Anfrage bei Clean24 – Eingang bestätigt",
+    "",
+    greeting,
+    "",
+    "vielen Dank für Ihre Anfrage über clean-24.ch. Wir prüfen die Angaben und melden",
+    "uns mit einer passenden Offerte.",
+    "",
+    ...presentRows.map(([label, value]) => `${label}: ${value}`),
+    "",
+    "Bei Fragen erreichen Sie uns telefonisch unter 044 516 19 23",
+    `oder per E-Mail an ${COMPANY.email}.`,
+    "",
+    contactBlockText(),
+  ].join("\n");
+
+  return {
+    subject,
+    html: wrapHtml({
+      previewText:
+        "Wir haben Ihre Anfrage erhalten und melden uns mit einer passenden Offerte.",
+      heading: "Ihre Anfrage ist eingegangen",
+      bodyHtml,
+      tagline: "Ihr Reinigungsprofi",
     }),
     text,
   };

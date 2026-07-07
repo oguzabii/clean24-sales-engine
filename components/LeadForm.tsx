@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CITIES } from "@/lib/constants";
+import {
+  INQUIRY_RECURRENCE_OPTIONS,
+  MOVE_OUT_CATEGORY,
+  OBJECT_TYPE_OPTIONS,
+} from "@/lib/service-categories";
 import type { LeadAttachmentRef, LeadFormData } from "@/lib/lead-payload";
 
 interface LeadFormProps {
@@ -16,6 +21,12 @@ interface LeadFormProps {
    * Umzugsreinigung; recurring services show the "Wiederholung" selector.
    */
   serviceType?: string;
+  /**
+   * Service category (lib/service-categories.ts). move_out_cleaning (default)
+   * keeps the full Umzugsreinigung form incl. Richtpreis; every other
+   * category renders the simplified manual-review inquiry.
+   */
+  serviceCategory?: string;
 }
 
 type FormState = Omit<LeadFormData, "source" | "service_type">;
@@ -73,6 +84,7 @@ export default function LeadForm({
   onBack,
   pagePath,
   serviceType = "umzugsreinigung",
+  serviceCategory = MOVE_OUT_CATEGORY,
 }: LeadFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -93,7 +105,10 @@ export default function LeadForm({
     ...prefilledData,
   });
 
-  const isUmzugsreinigung = serviceType === "umzugsreinigung";
+  // move_out_cleaning keeps the full Umzugsreinigung form; everything else is
+  // a manual-review inquiry (no Richtpreis, no Abgabe fields, no Rabattcode).
+  const isMoveOut = serviceCategory === MOVE_OUT_CATEGORY;
+  const isUmzugsreinigung = isMoveOut && serviceType === "umzugsreinigung";
   const isRecurringService = RECURRING_SERVICE_TYPES.includes(serviceType);
 
   // Optional Rabattcode — validated server-side via the Autopilot API.
@@ -218,8 +233,8 @@ export default function LeadForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Abgabezeit only makes sense together with an Abgabetermin.
-    if ((form.handover_time ?? "").trim() && !(form.handover_date ?? "").trim()) {
+    // Abgabezeit only makes sense together with an Abgabetermin (move-out only).
+    if (isMoveOut && (form.handover_time ?? "").trim() && !(form.handover_date ?? "").trim()) {
       setError("Bitte wählen Sie zuerst einen Abgabetermin aus.");
       return;
     }
@@ -247,15 +262,33 @@ export default function LeadForm({
 
       const payload = {
         ...form,
+        service_category: serviceCategory,
         attachments: attachments ?? undefined,
-        handover_time: (form.handover_time ?? "").trim() || undefined,
+        // Move-out-only fields never travel for manual-review inquiries.
+        apartment_size: isMoveOut ? form.apartment_size : undefined,
+        addons: isMoveOut ? form.addons : undefined,
+        express: isMoveOut ? form.express : undefined,
+        handover_date: isMoveOut ? form.handover_date : undefined,
+        handover_time: isMoveOut ? (form.handover_time ?? "").trim() || undefined : undefined,
+        handover_guarantee_requested: isMoveOut ? form.handover_guarantee_requested : undefined,
+        property_type: isMoveOut ? form.property_type : undefined,
+        windows_count: isMoveOut ? form.windows_count : undefined,
+        dirtiness_level: isMoveOut ? form.dirtiness_level || undefined : undefined,
+        priority_preference: isMoveOut ? form.priority_preference || undefined : undefined,
+        // Non-move-out: optional "gewünschter Termin" mirrors cleaning_date.
+        cleaning_date: (form.cleaning_date ?? "").trim() || undefined,
+        preferred_date: !isMoveOut ? (form.cleaning_date ?? "").trim() || undefined : undefined,
+        object_type: !isMoveOut ? form.object_type || undefined : undefined,
         // New key expected by Lead Autopilot; square_meters stays for
         // backward compatibility (same value, no rename).
         floor_area_m2: (form.square_meters ?? "").trim() || undefined,
-        recurrence: isRecurringService ? form.recurrence || undefined : undefined,
-        dirtiness_level: form.dirtiness_level || undefined,
-        priority_preference: form.priority_preference || undefined,
-        discount_code: discountCode.trim() || undefined,
+        recurrence: isMoveOut
+          ? isRecurringService
+            ? form.recurrence || undefined
+            : undefined
+          : form.recurrence || undefined,
+        // Rabattcode applies only to the automatic Richtpreis (move-out).
+        discount_code: isMoveOut ? discountCode.trim() || undefined : undefined,
         page_path: pagePath ?? (typeof window !== "undefined" ? window.location.pathname : "/"),
         utm_source: utmParams.utm_source,
         utm_medium: utmParams.utm_medium,
@@ -273,7 +306,7 @@ export default function LeadForm({
         throw new Error(data.error ?? "Fehler beim Absenden. Bitte versuchen Sie es erneut.");
       }
 
-      router.push("/danke");
+      router.push(isMoveOut ? "/danke" : "/danke?m=review");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler.");
       setSubmitting(false);
@@ -282,7 +315,7 @@ export default function LeadForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {estimatedMin && estimatedMax && (
+      {isMoveOut && estimatedMin && estimatedMax && (
         <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-700">
           {discount && discount.priceMin != null && discount.priceMax != null ? (
             <>
@@ -401,47 +434,99 @@ export default function LeadForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Reinigungsdatum <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="date"
-            required
-            value={form.cleaning_date ?? ""}
-            onChange={(e) => updateField("cleaning_date", e.target.value)}
-            min={new Date().toISOString().split("T")[0]}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+      {isMoveOut ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Reinigungsdatum <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              required
+              value={form.cleaning_date ?? ""}
+              onChange={(e) => updateField("cleaning_date", e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Abgabetermin (optional)
+            </label>
+            <input
+              type="date"
+              value={form.handover_date ?? ""}
+              onChange={(e) => updateField("handover_date", e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Abgabezeit (optional)
+            </label>
+            <input
+              type="time"
+              value={form.handover_time ?? ""}
+              onChange={(e) => updateField("handover_time", e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-400 leading-snug">
+              Optional – falls die Uhrzeit der Wohnungsabgabe bereits bekannt ist.
+            </p>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Abgabetermin (optional)
-          </label>
-          <input
-            type="date"
-            value={form.handover_date ?? ""}
-            onChange={(e) => updateField("handover_date", e.target.value)}
-            min={new Date().toISOString().split("T")[0]}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Objektart <span className="text-red-500">*</span>
+            </label>
+            <select
+              required
+              value={form.object_type ?? ""}
+              onChange={(e) => updateField("object_type", e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Bitte wählen</option>
+              {OBJECT_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Gewünschter Termin (optional)
+            </label>
+            <input
+              type="date"
+              value={form.cleaning_date ?? ""}
+              onChange={(e) => updateField("cleaning_date", e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Wiederholung
+            </label>
+            <select
+              value={form.recurrence ?? ""}
+              onChange={(e) => updateField("recurrence", e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Bitte wählen</option>
+              {INQUIRY_RECURRENCE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Abgabezeit (optional)
-          </label>
-          <input
-            type="time"
-            value={form.handover_time ?? ""}
-            onChange={(e) => updateField("handover_time", e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="mt-1 text-xs text-gray-400 leading-snug">
-            Optional – falls die Uhrzeit der Wohnungsabgabe bereits bekannt ist.
-          </p>
-        </div>
-      </div>
+      )}
 
       {(isUmzugsreinigung || isRecurringService) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -487,7 +572,7 @@ export default function LeadForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Bodenfläche in m² (optional)
+            {isMoveOut ? "Bodenfläche in m² (optional)" : "Fläche in m² (optional)"}
           </label>
           <input
             type="number"
@@ -498,20 +583,23 @@ export default function LeadForm({
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Anzahl Fenster (optional)
-          </label>
-          <input
-            type="number"
-            value={form.windows_count ?? ""}
-            onChange={(e) => updateField("windows_count", e.target.value)}
-            placeholder="z.B. 8"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        {isMoveOut && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Anzahl Fenster (optional)
+            </label>
+            <input
+              type="number"
+              value={form.windows_count ?? ""}
+              onChange={(e) => updateField("windows_count", e.target.value)}
+              placeholder="z.B. 8"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        )}
       </div>
 
+      {isMoveOut && (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -543,10 +631,11 @@ export default function LeadForm({
           </select>
         </div>
       </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Bemerkungen (optional)
+          {isMoveOut ? "Bemerkungen (optional)" : "Beschreibung / Bemerkungen (optional)"}
         </label>
         <textarea
           rows={3}
@@ -602,6 +691,7 @@ export default function LeadForm({
         {uploadError && <p className="mt-1 text-xs text-red-600">{uploadError}</p>}
       </div>
 
+      {isMoveOut && (
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Rabattcode (optional)
@@ -635,6 +725,7 @@ export default function LeadForm({
           <p className="mt-1 text-xs text-red-600">{discountError}</p>
         ) : null}
       </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
