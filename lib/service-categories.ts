@@ -24,7 +24,7 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
   },
   {
     value: "private_cleaning",
-    label: "Privatreinigung / Wohnungsreinigung",
+    label: "Wiederkehrende Reinigung Privat",
     description: "Regelmässige oder einmalige Reinigung für private Haushalte.",
   },
   {
@@ -112,3 +112,67 @@ export const INQUIRY_RECURRENCE_OPTIONS: { value: string; label: string }[] = [
   { value: "monthly", label: "Monatlich" },
   { value: "by_agreement", label: "Nach Vereinbarung" },
 ];
+
+/**
+ * Conditional "how many times" detail for a recurrence rhythm (non-move-out
+ * inquiries only). Only weekly / biweekly / monthly offer a count select;
+ * `once` and `by_agreement` never do. Manual-review inquiries capture the raw
+ * rhythm as-is — these combinations are NOT normalized into another cadence.
+ */
+export interface RecurrenceCountConfig {
+  /** Stored in the payload as `recurrence_unit`. */
+  unit: string;
+  /** Select label. */
+  label: string;
+  /** Count options offered: 1..max. */
+  max: number;
+  /** Human-readable option/summary, e.g. "2x pro Woche". */
+  optionLabel: (count: number) => string;
+}
+
+export const RECURRENCE_COUNT_CONFIG: Record<string, RecurrenceCountConfig> = {
+  weekly: {
+    unit: "week",
+    label: "Wie oft pro Woche?",
+    max: 6,
+    optionLabel: (n) => `${n}x pro Woche`,
+  },
+  biweekly: {
+    unit: "two_weeks",
+    label: "Wie oft alle 2 Wochen?",
+    max: 6,
+    optionLabel: (n) => `${n}x alle 2 Wochen`,
+  },
+  monthly: {
+    unit: "month",
+    label: "Wie oft pro Monat?",
+    max: 8,
+    optionLabel: (n) => `${n}x pro Monat`,
+  },
+};
+
+/** Base summary for a recurrence value without a count (or before one is picked). */
+const RECURRENCE_MAIN_LABEL: Record<string, string> = {
+  once: "Einmalig",
+  weekly: "Wöchentlich",
+  biweekly: "Alle 2 Wochen",
+  monthly: "Monatlich",
+  by_agreement: "Nach Vereinbarung",
+};
+
+/**
+ * Human-readable summary of the selected rhythm for the lead payload
+ * (`recurrence_summary`). With a count on weekly/biweekly/monthly it reads
+ * e.g. "2x pro Woche"; otherwise the plain main label ("Einmalig",
+ * "Nach Vereinbarung", …). Empty/unknown recurrence → undefined.
+ */
+export function buildRecurrenceSummary(
+  recurrence: string | undefined | null,
+  count?: number | null,
+): string | undefined {
+  const key = (recurrence ?? "").trim();
+  if (!key) return undefined;
+  const cfg = RECURRENCE_COUNT_CONFIG[key];
+  if (cfg && typeof count === "number" && count >= 1) return cfg.optionLabel(count);
+  return RECURRENCE_MAIN_LABEL[key];
+}

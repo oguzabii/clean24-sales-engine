@@ -51,6 +51,15 @@ export interface LeadFormData {
   handover_guarantee_requested?: boolean;
   /** Recurring services only: daily | weekly | biweekly | monthly | other. */
   recurrence?: string;
+  /**
+   * Non-move-out inquiries: how many times per recurrence unit (e.g. 2 = 2x).
+   * Only set for weekly / biweekly / monthly; absent for once / by_agreement.
+   */
+  recurrence_count?: number;
+  /** Non-move-out inquiries: recurrence unit — week | two_weeks | month. */
+  recurrence_unit?: string;
+  /** Non-move-out inquiries: human-readable rhythm, e.g. "2x pro Woche". */
+  recurrence_summary?: string;
   /** Info only: low | medium | high. */
   dirtiness_level?: string;
   windows_count?: string;

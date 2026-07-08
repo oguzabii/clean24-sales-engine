@@ -147,6 +147,17 @@ function mappedLabel(
 }
 
 /**
+ * Wiederholung row value. Non-move-out inquiries carry a human-readable rhythm
+ * summary ("2x pro Woche", "Nach Vereinbarung") — prefer it; otherwise fall
+ * back to the mapped recurrence code.
+ */
+function recurrenceLabel(payload: LeadPayload): string | null {
+  const summary = payload.recurrence_summary?.trim();
+  if (summary) return summary;
+  return mappedLabel(payload.recurrence, RECURRENCE_LABELS);
+}
+
+/**
  * Safe attachment summary — count only. Storage paths or links to the
  * uploaded files never appear in any email.
  */
@@ -288,7 +299,7 @@ export function buildLeadNotificationEmail(
     ["Abgabetermin", formatDate(payload.handover_date)],
     ["Abgabezeit", formatHandoverTime(payload)],
     ["Abgabegarantie gewünscht", guaranteeLabel(payload)],
-    ["Wiederholung", mappedLabel(payload.recurrence, RECURRENCE_LABELS)],
+    ["Wiederholung", recurrenceLabel(payload)],
     ["Verschmutzungsgrad", mappedLabel(payload.dirtiness_level, DIRTINESS_LABELS)],
     ["Zusatzleistungen", manualReview ? null : addonLabels.length ? addonLabels.join(", ") : "–"],
     ["Express", manualReview ? null : payload.express ? "Ja (+15%)" : "Nein"],
@@ -511,7 +522,7 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     ["Abgabetermin", formatDate(payload.handover_date)],
     ["Abgabezeit", formatHandoverTime(payload)],
     ["Abgabegarantie gewünscht", guaranteeLabel(payload)],
-    ["Wiederholung", mappedLabel(payload.recurrence, RECURRENCE_LABELS)],
+    ["Wiederholung", recurrenceLabel(payload)],
     ["Verschmutzungsgrad", mappedLabel(payload.dirtiness_level, DIRTINESS_LABELS)],
     ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : null],
     ["Express", payload.express ? "Ja (+15%)" : null],
@@ -633,7 +644,7 @@ function buildManualReviewConfirmationEmail(payload: LeadPayload): EmailContent 
     ["Ort / PLZ", [payload.zip, payload.city].filter(Boolean).join(" ")],
     ["Fläche (m²)", payload.floor_area_m2 ?? payload.square_meters],
     ["Gewünschter Termin", formatDate(payload.preferred_date ?? payload.cleaning_date)],
-    ["Wiederholung", mappedLabel(payload.recurrence, RECURRENCE_LABELS)],
+    ["Wiederholung", recurrenceLabel(payload)],
     ["Beschreibung / Bemerkungen", payload.notes],
     ["Fotos", attachmentsCountLabel(payload)],
   ];

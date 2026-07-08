@@ -7,6 +7,8 @@ import {
   INQUIRY_RECURRENCE_OPTIONS,
   MOVE_OUT_CATEGORY,
   OBJECT_TYPE_OPTIONS,
+  RECURRENCE_COUNT_CONFIG,
+  buildRecurrenceSummary,
 } from "@/lib/service-categories";
 import type { LeadAttachmentRef, LeadFormData } from "@/lib/lead-payload";
 
@@ -157,6 +159,32 @@ export default function LeadForm({
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Non-move-out recurrence. Changing the main rhythm resets the conditional
+  // count + unit so no stale detail lingers; the summary is recomputed for the
+  // new rhythm (base label until a count is picked).
+  const handleInquiryRecurrenceChange = (value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      recurrence: value,
+      recurrence_count: undefined,
+      recurrence_unit: undefined,
+      recurrence_summary: buildRecurrenceSummary(value, undefined),
+    }));
+  };
+
+  // Count select (weekly / biweekly / monthly only) → store count, unit and
+  // the human-readable summary together.
+  const handleRecurrenceCountChange = (recurrence: string, raw: string) => {
+    const count = raw ? Number(raw) : undefined;
+    const cfg = RECURRENCE_COUNT_CONFIG[recurrence];
+    setForm((prev) => ({
+      ...prev,
+      recurrence_count: count,
+      recurrence_unit: count != null ? cfg?.unit : undefined,
+      recurrence_summary: buildRecurrenceSummary(recurrence, count),
+    }));
+  };
+
   const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? []);
     // Reset so selecting the same file again re-triggers onChange.
@@ -286,6 +314,11 @@ export default function LeadForm({
             ? form.recurrence || undefined
             : undefined
           : form.recurrence || undefined,
+        // Recurrence rhythm detail — non-move-out inquiries only. Manual review
+        // keeps the raw combination (e.g. "2x pro Woche") without normalizing.
+        recurrence_count: !isMoveOut ? form.recurrence_count : undefined,
+        recurrence_unit: !isMoveOut ? form.recurrence_unit : undefined,
+        recurrence_summary: !isMoveOut ? form.recurrence_summary : undefined,
         // Rabattcode applies only to the automatic Richtpreis (move-out).
         discount_code: isMoveOut ? discountCode.trim() || undefined : undefined,
         page_path: pagePath ?? (typeof window !== "undefined" ? window.location.pathname : "/"),
@@ -513,7 +546,7 @@ export default function LeadForm({
             </label>
             <select
               value={form.recurrence ?? ""}
-              onChange={(e) => updateField("recurrence", e.target.value)}
+              onChange={(e) => handleInquiryRecurrenceChange(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               <option value="">Bitte wählen</option>
@@ -524,6 +557,30 @@ export default function LeadForm({
               ))}
             </select>
           </div>
+          {form.recurrence && RECURRENCE_COUNT_CONFIG[form.recurrence] && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {RECURRENCE_COUNT_CONFIG[form.recurrence].label}
+              </label>
+              <select
+                value={form.recurrence_count ?? ""}
+                onChange={(e) =>
+                  handleRecurrenceCountChange(form.recurrence as string, e.target.value)
+                }
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="">Bitte wählen</option>
+                {Array.from(
+                  { length: RECURRENCE_COUNT_CONFIG[form.recurrence].max },
+                  (_, i) => i + 1
+                ).map((n) => (
+                  <option key={n} value={n}>
+                    {RECURRENCE_COUNT_CONFIG[form.recurrence as string].optionLabel(n)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
 
@@ -629,6 +686,11 @@ export default function LeadForm({
           placeholder="Besonderheiten, spezielle Wünsche, Fragen..."
           className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         />
+        {!isMoveOut && form.recurrence === "by_agreement" && (
+          <p className="mt-1 text-xs text-gray-500 leading-snug">
+            Bitte beschreiben Sie den gewünschten Rhythmus kurz in den Bemerkungen.
+          </p>
+        )}
       </div>
 
       <div>
