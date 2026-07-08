@@ -138,11 +138,6 @@ const DIRTINESS_LABELS: Record<string, string> = {
   high: "Sehr schmutzig",
 };
 
-const PRIORITY_LABELS: Record<string, string> = {
-  quality: "Qualität",
-  price: "Preis",
-};
-
 function mappedLabel(
   value: string | undefined,
   labels: Record<string, string>
@@ -295,7 +290,6 @@ export function buildLeadNotificationEmail(
     ["Abgabegarantie gewünscht", guaranteeLabel(payload)],
     ["Wiederholung", mappedLabel(payload.recurrence, RECURRENCE_LABELS)],
     ["Verschmutzungsgrad", mappedLabel(payload.dirtiness_level, DIRTINESS_LABELS)],
-    ["Wichtiger", mappedLabel(payload.priority_preference, PRIORITY_LABELS)],
     ["Zusatzleistungen", manualReview ? null : addonLabels.length ? addonLabels.join(", ") : "–"],
     ["Express", manualReview ? null : payload.express ? "Ja (+15%)" : "Nein"],
     [manualReview ? "Beschreibung / Bemerkungen" : "Bemerkungen", payload.notes],
@@ -519,7 +513,6 @@ export function buildCustomerConfirmationEmail(payload: LeadPayload): EmailConte
     ["Abgabegarantie gewünscht", guaranteeLabel(payload)],
     ["Wiederholung", mappedLabel(payload.recurrence, RECURRENCE_LABELS)],
     ["Verschmutzungsgrad", mappedLabel(payload.dirtiness_level, DIRTINESS_LABELS)],
-    ["Wichtiger", mappedLabel(payload.priority_preference, PRIORITY_LABELS)],
     ["Zusatzleistungen", addonLabels.length ? addonLabels.join(", ") : null],
     ["Express", payload.express ? "Ja (+15%)" : null],
     ["Fotos", attachmentsCountLabel(payload)],

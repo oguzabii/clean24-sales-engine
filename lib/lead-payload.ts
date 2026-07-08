@@ -53,8 +53,6 @@ export interface LeadFormData {
   recurrence?: string;
   /** Info only: low | medium | high. */
   dirtiness_level?: string;
-  /** Info only: quality | price. */
-  priority_preference?: string;
   windows_count?: string;
   /** Map of addon key -> selected. Keys must match `ADDONS` in constants.ts. */
   addons?: Record<string, boolean>;
