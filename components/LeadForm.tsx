@@ -133,7 +133,16 @@ export default function LeadForm({
       const res = await fetch("/api/discount/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, price_min: estimatedMin, price_max: estimatedMax }),
+        // The preview endpoint recalculates from selections with the same pure
+        // pricing function as the submit route; client price amounts are not
+        // accepted as authoritative inputs.
+        body: JSON.stringify({
+          code,
+          apartment_size: form.apartment_size,
+          property_type: form.property_type,
+          addons: form.addons,
+          express: form.express,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (data?.valid) {

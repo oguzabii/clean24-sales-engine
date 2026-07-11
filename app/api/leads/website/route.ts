@@ -14,7 +14,6 @@ import {
 import { COMPANY } from "@/lib/constants";
 import { MOVE_OUT_CATEGORY, resolveServiceCategory } from "@/lib/service-categories";
 import { validateDiscountCode } from "@/lib/discount-validate";
-import { applyDiscountToRange } from "@/lib/discount";
 
 // nodemailer requires the Node.js runtime (not Edge).
 export const runtime = "nodejs";
@@ -91,44 +90,26 @@ export async function POST(request: NextRequest) {
 
   const data = body as LeadFormData;
 
-  let payload = buildLeadPayload({
-    ...data,
-    service_category: category.value,
-    addons: data.addons ?? {},
-    express: data.express ?? false,
-    attachments: sanitizeAttachments(data.attachments),
-  });
-
   // ---- Discount / Rabattcode (validated server-side via Lead Autopilot) ----
-  // Base pricing is never changed; a valid code only reduces the displayed
-  // Richtpreis range. Invalid/unknown codes are silently ignored so the
-  // no-code flow stays identical. Manual-review categories have no Richtpreis
-  // → codes are ignored entirely (never validated, never forwarded).
+  // Invalid/unknown codes are silently ignored so the no-code flow stays
+  // identical. Manual-review categories have no Richtpreis, so codes are
+  // ignored entirely (never validated, never forwarded).
   const submittedCode =
-    payload.pricing_mode === "automatic_range" ? (data.discount_code ?? "").trim() : "";
+    isMoveOut ? (data.discount_code ?? "").trim() : "";
   const discount = submittedCode ? await validateDiscountCode(submittedCode) : null;
-  if (
-    discount &&
-    payload.estimated_price_min != null &&
-    payload.estimated_price_max != null
-  ) {
-    const origMin = payload.estimated_price_min;
-    const origMax = payload.estimated_price_max;
-    const ranged = applyDiscountToRange(origMin, origMax, discount);
-    payload = {
-      ...payload,
-      discount_code: discount.code,
-      discount_type: discount.type,
-      discount_value: discount.value,
-      price_min_original: origMin,
-      price_max_original: origMax,
-      estimated_price_min: ranged.min,
-      estimated_price_max: ranged.max,
-    };
-  } else {
-    // No valid discount → never carry a stale/invalid code forward.
-    payload = { ...payload, discount_code: undefined };
-  }
+
+  // The authoritative server payload is always recalculated from submitted
+  // service selections. Client-computed price endpoints are never accepted.
+  const payload = buildLeadPayload(
+    {
+      ...data,
+      service_category: category.value,
+      addons: data.addons ?? {},
+      express: data.express ?? false,
+      attachments: sanitizeAttachments(data.attachments),
+    },
+    discount
+  );
 
   if (process.env.NODE_ENV === "development") {
     console.log("[Clean24 Lead]", JSON.stringify(payload, null, 2));

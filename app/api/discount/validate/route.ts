@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { validateDiscountCode } from "@/lib/discount-validate";
-import { applyDiscountToRange, discountLabel } from "@/lib/discount";
+import { discountLabel } from "@/lib/discount";
+import { calculatePrice } from "@/lib/pricing";
 
 // fetch() to the Autopilot runs in the Node.js runtime.
 export const runtime = "nodejs";
@@ -13,7 +14,13 @@ export const dynamic = "force-dynamic";
  * application happens again in the lead route on submit.
  */
 export async function POST(request: Request) {
-  let body: { code?: string; price_min?: number; price_max?: number };
+  let body: {
+    code?: unknown;
+    apartment_size?: unknown;
+    property_type?: unknown;
+    addons?: unknown;
+    express?: unknown;
+  };
   try {
     body = await request.json();
   } catch {
@@ -26,27 +33,43 @@ export async function POST(request: Request) {
   const discount = await validateDiscountCode(code);
   if (!discount) return NextResponse.json({ valid: false });
 
+  const addons =
+    typeof body.addons === "object" && body.addons !== null && !Array.isArray(body.addons)
+      ? Object.fromEntries(
+          Object.entries(body.addons).filter((entry): entry is [string, boolean] =>
+            typeof entry[1] === "boolean"
+          )
+        )
+      : {};
+  const pricing = calculatePrice(
+    {
+      apartment_size:
+        typeof body.apartment_size === "string" ? body.apartment_size : "3.5",
+      property_type:
+        typeof body.property_type === "string" ? body.property_type : "wohnung",
+      addons,
+      express: body.express === true,
+    },
+    discount
+  );
+
   const result: {
     valid: true;
     code: string;
     type: string;
     value: number;
     label: string;
-    price_min?: number;
-    price_max?: number;
+    price_min: number;
+    price_max: number;
   } = {
     valid: true,
     code: discount.code,
     type: discount.type,
     value: discount.value,
     label: discountLabel(discount),
+    price_min: pricing.min,
+    price_max: pricing.max,
   };
-
-  if (typeof body.price_min === "number" && typeof body.price_max === "number") {
-    const ranged = applyDiscountToRange(body.price_min, body.price_max, discount);
-    result.price_min = ranged.min;
-    result.price_max = ranged.max;
-  }
 
   return NextResponse.json(result);
 }

@@ -9,15 +9,20 @@ export const COMPANY = {
   mwst: "CHE-260.909.323",
 } as const;
 
-/** Base prices per apartment size, incl. 8.1% MwSt. */
-export const BASE_PRICES: Record<string, number> = {
-  "1-1.5": 750,
-  "2.5": 880,
-  "3.5": 1150,
-  "4.5": 1290,
-  "5.5": 1360,
-  "6.5+": 1630,
-};
+/**
+ * Final customer Richtpreis ranges per apartment size, incl. 8.1% MwSt.
+ *
+ * These endpoints are explicit business values. The active calculator must
+ * not derive them from a scalar base price or expand them by a generic margin.
+ */
+export const BASE_PRICE_RANGES = {
+  "1-1.5": { min: 710, max: 790 },
+  "2.5": { min: 770, max: 860 },
+  "3.5": { min: 890, max: 990 },
+  "4.5": { min: 1130, max: 1250 },
+  "5.5": { min: 1250, max: 1380 },
+  "6.5+": { min: 1490, max: 1640 },
+} as const satisfies Record<string, { min: number; max: number }>;
 
 export const APARTMENT_SIZE_LABELS: Record<string, string> = {
   "1-1.5": "1–1.5 Zimmer",
@@ -49,13 +54,13 @@ export const ADDONS: AddOn[] = [
     key: "limescale_heavy",
     label: "Starke Kalkablagerungen / Spezial-Entkalkung",
     description: "Bei sehr hartem Wasser oder stark verkalkten Bereichen.",
-    price: 150,
+    price: 160,
   },
   {
     key: "smoker",
     label: "Raucherwohnung / Nikotinrückstände",
     description: "Spezialbehandlung bei Nikotinverfärbungen und Geruchsrückständen.",
-    price: 390,
+    price: 400,
   },
   {
     key: "pet",
@@ -67,13 +72,13 @@ export const ADDONS: AddOn[] = [
     key: "carpet",
     label: "Teppich- oder Spannteppichreinigung",
     description: "Tiefenreinigung von Teppichböden, Preis je nach Fläche.",
-    price: 120,
+    price: 180,
   },
   {
     key: "large_cellar",
     label: "Grosser Keller / Hobbyraum / Nebenraum",
     description: "Für überdurchschnittlich grosse oder zusätzliche Nebenräume.",
-    price: 100,
+    price: 160,
   },
   {
     key: "wintergarden",
@@ -112,8 +117,6 @@ export const EXPRESS_SURCHARGE = 0.15;
  * Richtpreis range when the object is a house instead of an apartment.
  */
 export const HOUSE_SURCHARGE = 200;
-
-export const PRICE_RANGE_MARGIN = 0.1;
 
 export const CITIES = [
   "Zürich",

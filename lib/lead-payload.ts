@@ -1,4 +1,5 @@
-import { calculatePrice } from "./pricing";
+import { calculatePrice, type PriceBreakdown } from "./pricing";
+import type { ValidatedDiscount } from "./discount";
 import {
   MOVE_OUT_CATEGORY,
   pricingModeFor,
@@ -99,16 +100,29 @@ export interface LeadPayload extends Omit<LeadFormData, "addons" | "express"> {
   /** Pre-discount Richtpreis range (set only when a discount was applied). */
   price_min_original?: number | null;
   price_max_original?: number | null;
+  /** Customer-price components only; never contains sensitive cost or margin data. */
+  price_breakdown?: PriceBreakdown;
   created_at: string;
 }
 
-export function buildLeadPayload(data: LeadFormData): LeadPayload {
+export function buildLeadPayload(
+  data: LeadFormData,
+  discount?: ValidatedDiscount | null
+): LeadPayload {
   const category = resolveServiceCategory(data.service_category);
   const pricingMode = pricingModeFor(category.value);
 
-  const { addons: _addons, express: _express, ...rest } = data;
+  // Raw codes never travel forward. Only server-confirmed discount metadata is
+  // added below for an automatic-range lead.
+  const {
+    addons: _addons,
+    express: _express,
+    discount_code: _discountCode,
+    ...rest
+  } = data;
   void _addons;
   void _express;
+  void _discountCode;
 
   const common = {
     ...rest,
@@ -121,14 +135,17 @@ export function buildLeadPayload(data: LeadFormData): LeadPayload {
   };
 
   if (pricingMode === "automatic_range") {
-    // Umzugsreinigung — EXACTLY the previous behavior (pricing, add-ons,
-    // guarantee default "Ja", service_type value unchanged).
-    const pricing = calculatePrice({
-      apartment_size: data.apartment_size ?? "3.5",
-      addons: data.addons,
-      express: data.express,
-      property_type: data.property_type,
-    });
+    // Umzugsreinigung keeps its automatic flow, stable add-on keys, guarantee
+    // default "Ja", and service_type value.
+    const pricing = calculatePrice(
+      {
+        apartment_size: data.apartment_size ?? "3.5",
+        addons: data.addons,
+        express: data.express,
+        property_type: data.property_type,
+      },
+      discount
+    );
     const addons: string[] = [...pricing.selected_addons];
     if (data.express) addons.push("express");
 
@@ -141,6 +158,16 @@ export function buildLeadPayload(data: LeadFormData): LeadPayload {
       handover_guarantee_requested: data.handover_guarantee_requested ?? true,
       estimated_price_min: pricing.min,
       estimated_price_max: pricing.max,
+      price_breakdown: pricing.price_breakdown,
+      ...(discount
+        ? {
+            discount_code: discount.code,
+            discount_type: discount.type,
+            discount_value: discount.value,
+            price_min_original: pricing.original_min,
+            price_max_original: pricing.original_max,
+          }
+        : {}),
     };
   }
 
