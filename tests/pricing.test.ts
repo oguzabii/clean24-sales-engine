@@ -280,6 +280,8 @@ test("customer email uses final/original ranges without sensitive pricing wordin
 
   assert.match(email.text, /Ihr Richtpreis: CHF 1330 – CHF 1430/);
   assert.match(email.text, /statt CHF 1510 – CHF 1630/);
+  assert.match(email.text, /Objektart: Haus/);
+  assert.doesNotMatch(rendered, /Haus\s*\(\+\s*CHF\s*200\)/);
   assert.doesNotMatch(
     rendered,
     /Rabatt auf den Grundpreis|vom Rabatt ausgenommen|Rabatt gilt nicht für Zusatzleistungen|Partnerkosten|Mindestmarge|Bruttodifferenz/i

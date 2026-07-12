@@ -9,7 +9,6 @@ import {
   COMPANY,
   ADDONS_BY_KEY,
   APARTMENT_SIZE_LABELS,
-  HOUSE_SURCHARGE,
 } from "@/lib/constants";
 import { OBJECT_TYPE_LABELS, PRICING_MODE_LABELS } from "@/lib/service-categories";
 import { CHECKLIST_SECTIONS, CHECKLIST_PDF_FILENAME } from "./checklist-data";
@@ -97,9 +96,9 @@ function formatHandoverTime(payload: LeadPayload): string | null {
   return time ? `${time} Uhr` : "Wird noch vereinbart";
 }
 
-/** Objektart row — the Haus surcharge is spelled out as a breakdown hint. */
+/** Objektart row for customer-facing email summaries. */
 function propertyTypeLabel(payload: LeadPayload): string | null {
-  if (payload.property_type === "haus") return `Haus (+ CHF ${HOUSE_SURCHARGE})`;
+  if (payload.property_type === "haus") return "Haus";
   if (payload.property_type === "wohnung") return "Wohnung";
   return null;
 }

@@ -136,7 +136,7 @@ export default function PriceCalculator() {
           {state.property_type === "haus" && (
             <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-              Haus (+ CHF {pricing.house_surcharge})
+              Haus
             </span>
           )}
           {addonsCount > 0 && (
