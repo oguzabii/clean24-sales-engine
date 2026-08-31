@@ -40,6 +40,20 @@ const INITIAL_STATE: CalcState = {
   express: false,
 };
 
+const MOVE_OUT_STEP_LABELS: Record<Step, string> = {
+  category: "Leistung",
+  size: "Objekt",
+  addons: "Angaben",
+  contact: "Kontakt",
+};
+
+const MANUAL_STEP_LABELS: Record<Step, string> = {
+  category: "Leistung",
+  size: "Objekt",
+  addons: "Angaben",
+  contact: "Kontakt",
+};
+
 export default function PriceCalculator() {
   const [step, setStep] = useState<Step>("category");
   const [state, setState] = useState<CalcState>(INITIAL_STATE);
@@ -82,38 +96,46 @@ export default function PriceCalculator() {
       ? ["category", "contact"]
       : ["category", "size", "addons", "contact"];
   const stepIndex = steps.indexOf(step);
+  const stepLabels = isMoveOut ? MOVE_OUT_STEP_LABELS : MANUAL_STEP_LABELS;
 
   // Active indicators replacing per-line CHF breakdown
   const addonsCount = Object.values(state.addons).filter(Boolean).length;
 
   return (
-    <div id="calculator" className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+    <div id="calculator" className="overflow-hidden rounded-md border border-navy-100 bg-white shadow-[0_28px_70px_-52px_rgba(6,16,29,0.8)]">
       {/* Progress */}
-      <div className="bg-gray-50 border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm font-medium text-gray-500">
-            Schritt {stepIndex + 1} von {steps.length}
+      <div className="border-b border-navy-100 bg-mist px-5 py-5 sm:px-7">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-teal-700">
+            Clean24 System
+          </span>
+          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-navy-400">
+            Schritt {String(stepIndex + 1).padStart(2, "0")}
           </span>
         </div>
-        <div className="flex gap-2">
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
           {steps.map((s, i) => (
             <div
               key={s}
-              className={`h-1.5 flex-1 rounded-full transition-colors ${
-                i <= stepIndex ? "bg-blue-600" : "bg-gray-200"
+              className={`border-t pt-2 transition-colors ${
+                i <= stepIndex ? "border-teal-500 text-navy-950" : "border-navy-100 text-navy-300"
               }`}
-            />
+            >
+              <div className="text-[0.62rem] font-semibold uppercase tracking-[0.14em]">
+                {String(i + 1).padStart(2, "0")} {stepLabels[s]}
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
       {/* Neutral notice for manual-review categories — no CHF range. */}
       {state.category && !isMoveOut && (
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5">
-          <div className="text-blue-200 text-xs uppercase tracking-wider mb-1">
-            Individuelle Offerte
+        <div className="bg-navy-950 px-5 py-5 text-white sm:px-7">
+          <div className="mb-1 text-xs uppercase tracking-wider text-teal-200">
+            Klarer nächster Schritt
           </div>
-          <p className="text-sm text-blue-50 leading-relaxed">{MANUAL_REVIEW_NOTICE}</p>
+          <p className="text-sm leading-relaxed text-slate-100">{MANUAL_REVIEW_NOTICE}</p>
         </div>
       )}
 
@@ -121,75 +143,76 @@ export default function PriceCalculator() {
           Selections still adjust the range; final price is confirmed after
           review. */}
       {isMoveOut && (
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5">
-        <div className="text-blue-200 text-xs uppercase tracking-wider mb-1">
+      <div className="bg-navy-950 px-5 py-5 text-white sm:px-7">
+        <div className="mb-1 text-xs uppercase tracking-wider text-teal-200">
           Ihr Richtpreis (unverbindlich)
         </div>
         <div className="text-2xl sm:text-3xl font-bold tracking-tight tabular-nums">
           {pricing.display_min} – {pricing.display_max}
         </div>
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-blue-100/85 mt-2">
-          <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-100">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-teal-200" />
             {APARTMENT_SIZE_LABELS[state.apartment_size]}
           </span>
           {state.property_type === "haus" && (
-            <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-teal-200" />
               Haus
             </span>
           )}
           {addonsCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-teal-200" />
               {addonsCount} {addonsCount === 1 ? "Zusatzleistung" : "Zusatzleistungen"} berücksichtigt
             </span>
           )}
           {state.express && (
-            <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-teal-200" />
               Express berücksichtigt
             </span>
           )}
         </div>
-        <p className="text-xs text-blue-200/90 mt-3 leading-relaxed">
+        <p className="mt-3 text-xs leading-relaxed text-slate-300">
           Richtpreis, unverbindlich. Der genaue Preis wird nach Prüfung Ihrer Angaben bestätigt.
           Alle Preise inkl. 8.1% MwSt.
         </p>
       </div>
       )}
 
-      <div className="p-6">
+      <div className="p-5 sm:p-7">
         {/* Step 0: Category */}
         {step === "category" && (
           <div>
-            <h3 className="font-semibold text-gray-900 text-lg mb-1">
+            <div className="c24-eyebrow mb-3">01 Leistung</div>
+            <h3 className="mb-1 text-xl font-bold text-[#0b1f33]">
               Welche Reinigung benötigen Sie?
             </h3>
-            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+            <p className="mb-5 text-sm leading-relaxed text-slate-500">
               Wählen Sie die passende Kategorie aus. Bei Umzugsreinigungen erhalten Sie direkt
               eine Richtpreis-Spanne, andere Anfragen prüfen wir individuell.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {SERVICE_CATEGORIES.map((cat) => (
                 <button
                   key={cat.value}
                   type="button"
                   onClick={() => selectCategory(cat.value)}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
+                  className={`c24-choice min-h-24 p-4 text-left ${
                     state.category === cat.value
-                      ? "border-blue-600 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-300"
+                      ? "c24-choice-active"
+                      : ""
                   }`}
                 >
                   <div
                     className={`font-semibold text-sm ${
-                      state.category === cat.value ? "text-blue-700" : "text-gray-900"
+                      state.category === cat.value ? "text-[#0f766e]" : "text-[#0b1f33]"
                     }`}
                   >
                     {cat.label}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1 leading-snug">{cat.description}</p>
+                  <p className="mt-1 text-xs leading-snug text-slate-500">{cat.description}</p>
                 </button>
               ))}
             </div>
@@ -199,31 +222,32 @@ export default function PriceCalculator() {
         {/* Step 1: Size (move-out only) */}
         {step === "size" && (
           <div>
-            <h3 className="font-semibold text-gray-900 text-lg mb-1">
+            <div className="c24-eyebrow mb-3">02 Objekt</div>
+            <h3 className="mb-1 text-xl font-bold text-[#0b1f33]">
               Wie gross ist Ihre Wohnung?
             </h3>
-            <p className="text-xs text-gray-500 mb-4">
-              Schritt 2 von 4 · Angaben erfassen
+            <p className="mb-5 text-sm text-slate-500">
+              Anfrage starten · Objekt einordnen
             </p>
 
             <div className="mb-5">
-              <div className="text-sm font-medium text-gray-700 mb-2">Objektart</div>
+              <div className="text-sm font-semibold text-[#0b1f33] mb-2">Objektart</div>
               <div className="grid grid-cols-2 gap-3">
                 {PROPERTY_TYPES.map((pt) => (
                   <button
                     key={pt.key}
                     type="button"
                     onClick={() => setPropertyType(pt.key)}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                    className={`c24-choice min-h-20 p-4 text-left ${
                       state.property_type === pt.key
-                        ? "border-blue-600 bg-blue-50"
-                        : "border-gray-200 hover:border-blue-300"
+                        ? "c24-choice-active"
+                        : ""
                     }`}
                   >
-                    <div className={`font-semibold text-sm ${state.property_type === pt.key ? "text-blue-700" : "text-gray-900"}`}>
+                    <div className={`font-semibold text-sm ${state.property_type === pt.key ? "text-[#0f766e]" : "text-[#0b1f33]"}`}>
                       {pt.label}
                     </div>
-                    <div className={`text-[11px] mt-1 uppercase tracking-wider ${state.property_type === pt.key ? "text-blue-500" : "text-gray-400"}`}>
+                    <div className={`text-[11px] mt-1 uppercase tracking-wider ${state.property_type === pt.key ? "text-[#1f7f78]" : "text-slate-400"}`}>
                       {state.property_type === pt.key ? "Ausgewählt" : "Auswählen"}
                     </div>
                   </button>
@@ -236,16 +260,16 @@ export default function PriceCalculator() {
                 <button
                   key={key}
                   onClick={() => setApartmentSize(key)}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
+                  className={`c24-choice min-h-20 p-4 text-left ${
                     state.apartment_size === key
-                      ? "border-blue-600 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-300"
+                      ? "c24-choice-active"
+                      : ""
                   }`}
                 >
-                  <div className={`font-semibold text-sm ${state.apartment_size === key ? "text-blue-700" : "text-gray-900"}`}>
+                  <div className={`font-semibold text-sm ${state.apartment_size === key ? "text-[#0f766e]" : "text-[#0b1f33]"}`}>
                     {label}
                   </div>
-                  <div className={`text-[11px] mt-1 uppercase tracking-wider ${state.apartment_size === key ? "text-blue-500" : "text-gray-400"}`}>
+                  <div className={`text-[11px] mt-1 uppercase tracking-wider ${state.apartment_size === key ? "text-[#1f7f78]" : "text-slate-400"}`}>
                     {state.apartment_size === key ? "Ausgewählt" : "Auswählen"}
                   </div>
                 </button>
@@ -253,12 +277,12 @@ export default function PriceCalculator() {
             </div>
 
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-[#dbe6ea] bg-[#f7fafb] p-4 text-sm text-slate-700">
                 <input
                   type="checkbox"
                   checked={state.express}
                   onChange={(e) => setExpress(e.target.checked)}
-                  className="w-4 h-4 rounded text-blue-600"
+                  className="h-5 w-5 rounded text-[#1f9b8f]"
                 />
                 <span>Express-Termin gewünscht (24–48h)</span>
               </label>
@@ -267,13 +291,13 @@ export default function PriceCalculator() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setStep("category")}
-                className="flex-1 border border-gray-200 text-gray-600 hover:text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors"
+                className="c24-button-secondary flex-1"
               >
                 Zurück
               </button>
               <button
                 onClick={() => setStep("addons")}
-                className="flex-2 flex-grow bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+                className="c24-button-primary flex-grow"
               >
                 Weiter: Zusatzleistungen
               </button>
@@ -284,11 +308,12 @@ export default function PriceCalculator() {
         {/* Step 2: Add-ons */}
         {step === "addons" && (
           <div>
-            <h3 className="font-semibold text-gray-900 text-lg mb-1">
+            <div className="c24-eyebrow mb-3">03 Angaben</div>
+            <h3 className="mb-1 text-xl font-bold text-[#0b1f33]">
               Welche Zusatzleistungen benötigen Sie?
             </h3>
-            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-              Schritt 3 von 4 · Standardleistungen wie Küche inkl. Backofen, Bad, normale
+            <p className="mb-5 text-sm leading-relaxed text-slate-500">
+              Standardleistungen wie Küche inkl. Backofen, Bad, normale
               Fenster/Storen, Balkon und normaler Keller sind bereits enthalten. Wählen Sie hier nur
               besondere Zusatzleistungen.
             </p>
@@ -299,13 +324,13 @@ export default function PriceCalculator() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setStep("size")}
-                className="flex-1 border border-gray-200 text-gray-600 hover:text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors"
+                className="c24-button-secondary flex-1"
               >
                 Zurück
               </button>
               <button
                 onClick={() => setStep("contact")}
-                className="flex-2 flex-grow bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+                className="c24-button-primary flex-grow"
               >
                 Weiter: Kontakt & Termin
               </button>
@@ -316,12 +341,12 @@ export default function PriceCalculator() {
         {/* Step 3: Contact / Lead Form */}
         {step === "contact" && isMoveOut && (
           <div>
-            <h3 className="font-semibold text-gray-900 text-lg mb-1">
+            <div className="c24-eyebrow mb-3">04 Kontakt</div>
+            <h3 className="mb-1 text-xl font-bold text-[#0b1f33]">
               Ihre Kontaktdaten & Wunschtermin
             </h3>
-            <p className="text-sm text-gray-500 mb-5">
-              Schritt 4 von 4 · Anfrage absenden. Wir prüfen Ihre Angaben und melden uns mit
-              Fixpreis und Terminvorschlag.
+            <p className="mb-5 text-sm text-slate-500">
+              Anfrage absenden. Der genaue Preis wird nach Prüfung Ihrer Angaben bestätigt.
             </p>
             <LeadForm
               serviceCategory={state.category}
@@ -341,12 +366,12 @@ export default function PriceCalculator() {
         {/* Step 2 (non-move-out): inquiry details + contact */}
         {step === "contact" && !isMoveOut && (
           <div>
-            <h3 className="font-semibold text-gray-900 text-lg mb-1">
+            <div className="c24-eyebrow mb-3">02 Kontakt</div>
+            <h3 className="mb-1 text-xl font-bold text-[#0b1f33]">
               Ihre Angaben & Kontaktdaten
             </h3>
-            <p className="text-sm text-gray-500 mb-5">
-              Schritt 2 von 2 · Anfrage absenden. Wir prüfen Ihre Angaben individuell und melden
-              uns mit einer passenden Offerte.
+            <p className="mb-5 text-sm text-slate-500">
+              Anfrage absenden. Clean24 übernimmt den weiteren Ablauf.
             </p>
             <LeadForm
               serviceCategory={state.category}

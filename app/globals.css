@@ -1,25 +1,161 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7fafb;
+  --foreground: #102033;
+  --c24-navy: #0b1f33;
+  --c24-navy-soft: #12324f;
+  --c24-teal: #1f9b8f;
+  --c24-mist: #eef5f7;
+  --c24-border: #dbe6ea;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-navy-50: #eef3f9;
+  --color-navy-100: #d8e3f0;
+  --color-navy-200: #b3c6e0;
+  --color-navy-300: #84a1c9;
+  --color-navy-400: #5479ab;
+  --color-navy-500: #335a8e;
+  --color-navy-600: #244873;
+  --color-navy-700: #1b375a;
+  --color-navy-800: #122844;
+  --color-navy-900: #0c1d33;
+  --color-navy-950: #06101d;
+  --color-teal-50: #e9fbfc;
+  --color-teal-100: #c8f5f8;
+  --color-teal-200: #97ebf1;
+  --color-teal-300: #5dd9e4;
+  --color-teal-400: #2cc1d2;
+  --color-teal-500: #14a9bd;
+  --color-teal-600: #0d8a9d;
+  --color-teal-700: #106e7e;
+  --color-teal-800: #135967;
+  --color-teal-900: #144a57;
+  --color-ink: #0e1b2c;
+  --color-mist: #f4f7fb;
+  --color-glass: #e9f3f8;
 }
 
 body {
+  overflow-x: clip;
   background: var(--background);
   color: var(--foreground);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
 }
 
-/* ----- Premium motion ------------------------------------------------- */
+::selection {
+  background: rgba(31, 155, 143, 0.22);
+}
+
+.container-page {
+  width: min(100% - 2rem, 1180px);
+  margin-inline: auto;
+}
+
+.c24-section {
+  padding-block: clamp(4rem, 7vw, 7rem);
+}
+
+.c24-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #1d6f75;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.c24-button-primary {
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  border-radius: 0.5rem;
+  background: var(--c24-navy);
+  color: white;
+  padding: 0.9rem 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  box-shadow: 0 16px 34px -24px rgba(11, 31, 51, 0.9);
+  transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.c24-button-primary:hover {
+  background: var(--c24-navy-soft);
+  transform: translateY(-1px);
+  box-shadow: 0 20px 38px -24px rgba(11, 31, 51, 0.95);
+}
+
+.c24-button-secondary {
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid var(--c24-border);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--c24-navy);
+  padding: 0.9rem 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.c24-button-secondary:hover {
+  border-color: #9ac7c7;
+  background: white;
+  color: #0f766e;
+}
+
+.c24-input {
+  width: 100%;
+  min-height: 3rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--c24-border);
+  background: white;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.95rem;
+  color: var(--c24-navy);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.c24-input:focus {
+  border-color: var(--c24-teal);
+  box-shadow: 0 0 0 4px rgba(31, 155, 143, 0.14);
+}
+
+.c24-choice {
+  border-radius: 0.65rem;
+  border: 1px solid var(--c24-border);
+  background: white;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.c24-choice:hover {
+  border-color: #9ac7c7;
+}
+
+.c24-choice-active {
+  border-color: var(--c24-teal);
+  background: #eefbf8;
+  box-shadow: inset 0 0 0 1px rgba(31, 155, 143, 0.34);
+}
+
+/* ----- Motion ------------------------------------------------- */
 
 /* Section reveal on viewport entry — uses CSS only (paired with the
    `data-reveal` attribute and a tiny IntersectionObserver script). */
@@ -95,15 +231,6 @@ html {
   animation: c24-count-in 700ms ease-out both;
 }
 
-/* Soft floating glow used inside dark hero. */
-@keyframes c24-glow-float {
-  0%, 100% { transform: translate(0, 0); opacity: 0.55; }
-  50% { transform: translate(20px, -10px); opacity: 0.9; }
-}
-.c24-glow {
-  animation: c24-glow-float 12s ease-in-out infinite;
-}
-
 /* Respect user preference. */
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] {
@@ -114,8 +241,7 @@ html {
   .c24-bg-drift,
   .c24-live-dot::after,
   .c24-ticker-track,
-  .c24-count-in,
-  .c24-glow {
+  .c24-count-in {
     animation: none !important;
   }
 }

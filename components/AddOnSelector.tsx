@@ -21,29 +21,29 @@ export default function AddOnSelector({ values, onChange }: AddOnSelectorProps) 
         return (
           <label
             key={addon.key}
-            className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+            className={`c24-choice flex cursor-pointer items-start gap-4 p-4 ${
               active
-                ? "border-blue-600 bg-blue-50"
-                : "border-gray-200 hover:border-blue-300"
+                ? "c24-choice-active"
+                : ""
             }`}
           >
             <input
               type="checkbox"
               checked={active}
               onChange={(e) => onChange(addon.key, e.target.checked)}
-              className="w-5 h-5 rounded text-blue-600 flex-shrink-0 mt-0.5"
+              className="mt-0.5 h-5 w-5 flex-shrink-0 rounded text-[#1f9b8f]"
             />
             <div className="flex-1 min-w-0">
-              <div className={`font-medium text-sm ${active ? "text-blue-700" : "text-gray-900"}`}>
+              <div className={`text-sm font-semibold ${active ? "text-[#0f766e]" : "text-[#0b1f33]"}`}>
                 {addon.label}
               </div>
-              <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+              <div className="mt-1 text-xs leading-relaxed text-slate-500">
                 {addon.description}
               </div>
             </div>
             <div
               className={`text-[11px] uppercase tracking-wider font-semibold flex-shrink-0 whitespace-nowrap ${
-                active ? "text-blue-600" : "text-gray-400"
+                active ? "text-[#1f7f78]" : "text-slate-400"
               }`}
             >
               {active ? "Berücksichtigt" : trailingLabel}

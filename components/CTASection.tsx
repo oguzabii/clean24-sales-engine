@@ -24,17 +24,17 @@ export default function CTASection({
   dark = true,
 }: CTASectionProps) {
   return (
-    <section className={`py-16 ${dark ? "bg-gray-900 text-white" : "bg-blue-600 text-white"}`}>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-2xl md:text-3xl font-bold mb-4">{title}</h2>
-        <p className={`mb-8 max-w-2xl mx-auto ${dark ? "text-gray-400" : "text-blue-100"}`}>
+    <section className={`py-16 ${dark ? "bg-[#0b1f33] text-white" : "bg-[#eef5f7] text-[#0b1f33]"}`}>
+      <div className="container-page max-w-4xl text-center">
+        <h2 className="mb-4 text-2xl font-bold md:text-3xl">{title}</h2>
+        <p className={`mx-auto mb-8 max-w-2xl ${dark ? "text-slate-300" : "text-slate-600"}`}>
           {subtitle}
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           {showCalculator && (
             <OfferScrollLink
               href={calculatorHref}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-colors w-full sm:w-auto justify-center"
+              className="c24-button-primary w-full sm:w-auto"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -45,7 +45,7 @@ export default function CTASection({
           {showEmail && (
             <a
               href={`mailto:${COMPANY.email}`}
-              className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-4 rounded-xl transition-colors w-full sm:w-auto justify-center"
+              className="inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-lg bg-[#1f9b8f] px-8 py-4 font-semibold text-white transition-colors hover:bg-[#0f766e] sm:w-auto"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -56,8 +56,8 @@ export default function CTASection({
           {showPhone && (
             <a
               href={`tel:${COMPANY.phone}`}
-              className={`inline-flex items-center gap-2 font-semibold px-8 py-4 rounded-xl transition-colors w-full sm:w-auto justify-center border ${
-                dark ? "border-gray-600 text-gray-300 hover:text-white hover:border-gray-400" : "border-blue-200 text-white hover:bg-blue-700"
+              className={`inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-lg border px-8 py-4 font-semibold transition-colors sm:w-auto ${
+                dark ? "border-white/25 text-slate-200 hover:border-white/45 hover:text-white" : "border-[#b8d5d8] text-[#0b1f33] hover:bg-white"
               }`}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

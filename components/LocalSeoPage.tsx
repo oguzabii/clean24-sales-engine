@@ -21,7 +21,7 @@ export default function LocalSeoPage({ city, slug, headline, intro }: LocalSeoPa
     },
     {
       question: `Was kostet eine Umzugsreinigung in ${city}?`,
-      answer: `Der Preis hängt von der Wohnungsgrösse und den gewünschten Zusatzleistungen ab. Startpreise: 1–1.5 Zimmer ab CHF 750, 2.5 Zimmer ab CHF 880, 3.5 Zimmer ab CHF 1'150, 4.5 Zimmer ab CHF 1'290. Alle Preise inkl. 8.1% MwSt. Berechnen Sie Ihren Richtpreis in 60 Sekunden.`,
+      answer: `Der Preis hängt von der Wohnungsgrösse und den gewünschten Zusatzleistungen ab. Berechnen Sie Ihren unverbindlichen Richtpreis direkt im Formular. Alle Preise inkl. 8.1% MwSt.`,
     },
     {
       question: "Gilt die Abgabegarantie auch wenn der Vermieter streng ist?",
@@ -36,27 +36,26 @@ export default function LocalSeoPage({ city, slug, headline, intro }: LocalSeoPa
   return (
     <>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900 text-white py-20">
+      <section className="bg-mist py-16 text-navy-950 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 rounded-full px-4 py-1.5 text-blue-300 text-sm font-medium mb-6">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              {city} – Mit Abgabegarantie
+            <div className="c24-eyebrow mb-6">
+              Clean24 System · {city}
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6 tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-semibold leading-tight mb-6 tracking-tight">
               {headline}
             </h1>
-            <p className="text-lg text-gray-300 leading-relaxed mb-8 max-w-2xl">{intro}</p>
+            <p className="text-lg text-slate-600 leading-relaxed mb-8 max-w-2xl">{intro}</p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a
                 href="#calculator"
-                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-colors"
+                className="c24-button-primary"
               >
                 Richtpreis berechnen
               </a>
               <a
                 href={`tel:${COMPANY.phone.replace(/\s/g, "")}`}
-                className="inline-flex items-center justify-center gap-2 border border-white/40 text-white hover:bg-white/10 font-semibold px-8 py-4 rounded-xl transition-colors"
+                className="c24-button-secondary"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -93,7 +92,7 @@ export default function LocalSeoPage({ city, slug, headline, intro }: LocalSeoPa
               Direkte Anfrage für {city}
             </h2>
             <p className="text-gray-500">
-              Kein Kalkulator nötig – füllen Sie direkt das Formular aus. Wir antworten innerhalb von 10 Minuten.
+              Kein Kalkulator nötig – füllen Sie direkt das Formular aus. Clean24 übernimmt den weiteren Ablauf.
             </p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">

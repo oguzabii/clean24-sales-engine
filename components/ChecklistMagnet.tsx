@@ -73,10 +73,9 @@ export default function ChecklistMagnet({
   return (
     <>
       {/* ===== Email capture (or confirmation) ===== */}
-      <section className="bg-gradient-to-br from-gray-950 via-gray-900 to-blue-950 text-white py-16 md:py-20">
+      <section className="bg-navy-950 text-white py-16 md:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/15 border border-emerald-400/30 rounded-full px-4 py-1.5 text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-5">
-            <span className="c24-live-dot" />
+          <div className="inline-flex items-center gap-2 border border-white/15 bg-white/10 px-4 py-1.5 text-teal-200 text-xs font-semibold uppercase tracking-wider mb-5">
             Kostenlos · per E-Mail
           </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">

@@ -355,19 +355,19 @@ export default function LeadForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {isMoveOut && estimatedMin && estimatedMax && (
-        <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-700">
+        <div className="rounded-lg border border-[#b8d5d8] bg-[#eefbf8] px-4 py-3 text-sm text-[#0f766e]">
           {discount && discount.priceMin != null && discount.priceMax != null ? (
             <>
               Ihr Richtpreis:{" "}
-              <span className="line-through text-blue-400">
+              <span className="text-slate-400 line-through">
                 CHF {estimatedMin} – CHF {estimatedMax}
               </span>{" "}
               <strong>
                 CHF {discount.priceMin} – CHF {discount.priceMax}
               </strong>
-              <span className="block text-xs text-green-600 mt-0.5">
+              <span className="mt-0.5 block text-xs text-[#0f766e]">
                 Rabatt {discount.code} (−{discount.label}) angewendet.
               </span>
             </>
@@ -376,7 +376,7 @@ export default function LeadForm({
               Ihr Richtpreis: <strong>CHF {estimatedMin} – CHF {estimatedMax}</strong>
             </>
           )}
-          <span className="block text-xs text-blue-400 mt-0.5">
+          <span className="mt-0.5 block text-xs text-slate-500">
             Wird nach Prüfung Ihrer Angaben bestätigt.
           </span>
         </div>
@@ -384,7 +384,7 @@ export default function LeadForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
             Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -393,11 +393,11 @@ export default function LeadForm({
             value={form.customer_name ?? ""}
             onChange={(e) => updateField("customer_name", e.target.value)}
             placeholder="Vorname Nachname"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="c24-input"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
             Telefon <span className="text-red-500">*</span>
           </label>
           <input
@@ -406,13 +406,13 @@ export default function LeadForm({
             value={form.phone ?? ""}
             onChange={(e) => updateField("phone", e.target.value)}
             placeholder="+41 79 000 00 00"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="c24-input"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
           E-Mail <span className="text-red-500">*</span>
         </label>
         <input
@@ -421,12 +421,12 @@ export default function LeadForm({
           value={form.email ?? ""}
           onChange={(e) => updateField("email", e.target.value)}
           placeholder="ihre@email.ch"
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="c24-input"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
           Adresse / Strasse und Hausnummer <span className="text-red-500">*</span>
         </label>
         <input
@@ -435,13 +435,13 @@ export default function LeadForm({
           value={form.address ?? ""}
           onChange={(e) => updateField("address", e.target.value)}
           placeholder="Musterstrasse 12"
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="c24-input"
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
             PLZ <span className="text-red-500">*</span>
           </label>
           <input
@@ -451,11 +451,11 @@ export default function LeadForm({
             onChange={(e) => updateField("zip", e.target.value)}
             placeholder="8953"
             maxLength={4}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="c24-input"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
             Ort <span className="text-red-500">*</span>
           </label>
           <input
@@ -465,7 +465,7 @@ export default function LeadForm({
             value={form.city ?? ""}
             onChange={(e) => updateField("city", e.target.value)}
             placeholder="Dietikon"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="c24-input"
           />
           <datalist id="city-list">
             {CITIES.map((c) => (
@@ -478,7 +478,7 @@ export default function LeadForm({
       {isMoveOut ? (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
               Reinigungsdatum <span className="text-red-500">*</span>
             </label>
             <input
@@ -487,11 +487,11 @@ export default function LeadForm({
               value={form.cleaning_date ?? ""}
               onChange={(e) => updateField("cleaning_date", e.target.value)}
               min={new Date().toISOString().split("T")[0]}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="c24-input"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
               Abgabetermin (optional)
             </label>
             <input
@@ -499,18 +499,18 @@ export default function LeadForm({
               value={form.handover_date ?? ""}
               onChange={(e) => updateField("handover_date", e.target.value)}
               min={new Date().toISOString().split("T")[0]}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="c24-input"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
               Abgabezeit (optional)
             </label>
             <input
               type="time"
               value={form.handover_time ?? ""}
               onChange={(e) => updateField("handover_time", e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="c24-input"
             />
             <p className="mt-1 text-xs text-gray-400 leading-snug">
               Optional – falls die Uhrzeit der Wohnungsabgabe bereits bekannt ist.
@@ -520,14 +520,14 @@ export default function LeadForm({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
               Objektart <span className="text-red-500">*</span>
             </label>
             <select
               required
               value={form.object_type ?? ""}
               onChange={(e) => updateField("object_type", e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="c24-input"
             >
               <option value="">Bitte wählen</option>
               {OBJECT_TYPE_OPTIONS.map((o) => (
@@ -538,7 +538,7 @@ export default function LeadForm({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
               Gewünschter Termin (optional)
             </label>
             <input
@@ -546,17 +546,17 @@ export default function LeadForm({
               value={form.cleaning_date ?? ""}
               onChange={(e) => updateField("cleaning_date", e.target.value)}
               min={new Date().toISOString().split("T")[0]}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="c24-input"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
               Wiederholung
             </label>
             <select
               value={form.recurrence ?? ""}
               onChange={(e) => handleInquiryRecurrenceChange(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="c24-input"
             >
               <option value="">Bitte wählen</option>
               {INQUIRY_RECURRENCE_OPTIONS.map((o) => (
@@ -568,7 +568,7 @@ export default function LeadForm({
           </div>
           {form.recurrence && RECURRENCE_COUNT_CONFIG[form.recurrence] && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
                 {RECURRENCE_COUNT_CONFIG[form.recurrence].label}
               </label>
               <select
@@ -576,7 +576,7 @@ export default function LeadForm({
                 onChange={(e) =>
                   handleRecurrenceCountChange(form.recurrence as string, e.target.value)
                 }
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="c24-input"
               >
                 <option value="">Bitte wählen</option>
                 {Array.from(
@@ -597,7 +597,7 @@ export default function LeadForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {isUmzugsreinigung && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
                 Abgabegarantie gewünscht?
               </label>
               <select
@@ -605,7 +605,7 @@ export default function LeadForm({
                 onChange={(e) =>
                   updateField("handover_guarantee_requested", e.target.value === "ja")
                 }
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="c24-input"
               >
                 <option value="ja">Ja</option>
                 <option value="nein">Nein</option>
@@ -614,13 +614,13 @@ export default function LeadForm({
           )}
           {isRecurringService && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
                 Wiederholung
               </label>
               <select
                 value={form.recurrence ?? ""}
                 onChange={(e) => updateField("recurrence", e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="c24-input"
               >
                 <option value="">Bitte wählen</option>
                 {RECURRENCE_OPTIONS.map((o) => (
@@ -636,7 +636,7 @@ export default function LeadForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
             {isMoveOut ? "Bodenfläche in m² (optional)" : "Fläche in m² (optional)"}
           </label>
           <input
@@ -645,12 +645,12 @@ export default function LeadForm({
             value={form.square_meters ?? ""}
             onChange={(e) => updateField("square_meters", e.target.value)}
             placeholder="z.B. 85"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="c24-input"
           />
         </div>
         {isMoveOut && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
               Anzahl Fenster (optional)
             </label>
             <input
@@ -658,7 +658,7 @@ export default function LeadForm({
               value={form.windows_count ?? ""}
               onChange={(e) => updateField("windows_count", e.target.value)}
               placeholder="z.B. 8"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="c24-input"
             />
           </div>
         )}
@@ -667,13 +667,13 @@ export default function LeadForm({
       {isMoveOut && (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
             Verschmutzungsgrad (optional)
           </label>
           <select
             value={form.dirtiness_level ?? ""}
             onChange={(e) => updateField("dirtiness_level", e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="c24-input"
           >
             <option value="">Bitte wählen</option>
             <option value="low">Wenig schmutzig</option>
@@ -685,7 +685,7 @@ export default function LeadForm({
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
           {isMoveOut ? "Bemerkungen (optional)" : "Beschreibung / Bemerkungen (optional)"}
         </label>
         <textarea
@@ -693,7 +693,7 @@ export default function LeadForm({
           value={form.notes ?? ""}
           onChange={(e) => updateField("notes", e.target.value)}
           placeholder="Besonderheiten, spezielle Wünsche, Fragen..."
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="c24-input min-h-28 resize-y"
         />
         {!isMoveOut && form.recurrence === "by_agreement" && (
           <p className="mt-1 text-xs text-gray-500 leading-snug">
@@ -703,7 +703,7 @@ export default function LeadForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
           Fotos hochladen (optional)
         </label>
         <p className="text-xs text-gray-500 mb-2 leading-snug">
@@ -715,7 +715,7 @@ export default function LeadForm({
           multiple
           accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
           onChange={handleFilesSelected}
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-3 file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold file:text-xs file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+          className="c24-input text-slate-600 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-[#eefbf8] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#0f766e]"
         />
         <p className="mt-1 text-xs text-gray-400">
           Max. 10 Dateien, je max. 10 MB. JPG, PNG, WEBP oder PDF.
@@ -749,7 +749,7 @@ export default function LeadForm({
 
       {isMoveOut && (
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
           Rabattcode (optional)
         </label>
         <div className="flex gap-2">
@@ -762,13 +762,13 @@ export default function LeadForm({
               setDiscountError(null);
             }}
             placeholder="z.B. SOMMER10"
-            className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="c24-input flex-1"
           />
           <button
             type="button"
             onClick={applyDiscount}
             disabled={discountChecking || !discountCode.trim()}
-            className="border border-gray-200 text-gray-700 hover:text-blue-600 disabled:opacity-50 font-semibold px-5 rounded-xl transition-colors whitespace-nowrap"
+            className="c24-button-secondary whitespace-nowrap px-5 disabled:opacity-50"
           >
             {discountChecking ? "Prüfen..." : "Anwenden"}
           </button>
@@ -784,7 +784,7 @@ export default function LeadForm({
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -794,7 +794,7 @@ export default function LeadForm({
           <button
             type="button"
             onClick={onBack}
-            className="flex-1 border border-gray-200 text-gray-600 hover:text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors"
+            className="c24-button-secondary flex-1"
           >
             Zurück
           </button>
@@ -802,7 +802,7 @@ export default function LeadForm({
         <button
           type="submit"
           disabled={submitting}
-          className="flex-grow bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+          className="c24-button-primary flex-grow disabled:opacity-60"
         >
           {uploadingPhotos
             ? "Fotos werden hochgeladen..."
@@ -812,8 +812,8 @@ export default function LeadForm({
         </button>
       </div>
 
-      <p className="text-xs text-gray-400 text-center">
-        Keine Vorauszahlung. Unverbindlich. Wir antworten innerhalb von 10 Minuten.
+      <p className="rounded-lg bg-[#f7fafb] px-4 py-3 text-center text-xs leading-relaxed text-slate-500">
+        Keine Vorauszahlung. Unverbindlich. Nach Ihrer Anfrage läuft der weitere Ablauf strukturiert über Clean24.
       </p>
     </form>
   );

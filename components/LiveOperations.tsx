@@ -74,21 +74,20 @@ export default function LiveOperations() {
   return (
     <div
       data-reveal
-      className="relative bg-white/[0.04] backdrop-blur-md border border-white/10 rounded-2xl p-4 lg:p-5 overflow-hidden"
+      className="relative overflow-hidden rounded-lg border border-[#dbe6ea] bg-[#f7fafb] p-4 lg:p-5"
     >
-      <div className="absolute -top-24 -right-24 w-56 h-56 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="relative">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div>
-            <div className="text-white font-semibold text-base lg:text-[17px] tracking-tight leading-tight">
+            <div className="text-base font-bold leading-tight tracking-tight text-[#0b1f33] lg:text-[17px]">
               Heute bei Clean24
             </div>
-            <div className="text-blue-200/60 text-[11px] mt-0.5">
+            <div className="mt-0.5 text-[11px] text-slate-500">
               Operativer Status, automatisch nach Tageszeit.
             </div>
           </div>
-          <div className="inline-flex items-center gap-2 bg-emerald-500/15 border border-emerald-400/30 rounded-full px-2.5 py-1 text-emerald-300 text-[11px] font-medium">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#b8d5d8] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0f766e]">
             <span className="c24-live-dot" />
             Live
           </div>
@@ -99,31 +98,31 @@ export default function LiveOperations() {
           {stats.map((s) => (
             <div
               key={s.label}
-              className="bg-white/[0.04] border border-white/10 rounded-lg px-2 py-3 text-center"
+              className="rounded-md border border-[#dbe6ea] bg-white px-2 py-3 text-center"
             >
-              <div className="c24-count-in text-2xl md:text-[28px] font-bold text-white tracking-tight tabular-nums leading-none">
+              <div className="c24-count-in text-2xl font-bold leading-none tracking-tight text-[#0b1f33] tabular-nums md:text-[28px]">
                 {s.value ?? "—"}
               </div>
-              <div className="text-[10px] text-blue-200/70 mt-1.5 leading-tight">{s.label}</div>
+              <div className="mt-1.5 text-[10px] leading-tight text-slate-500">{s.label}</div>
             </div>
           ))}
         </div>
 
         {/* Bottom 2-col tiles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div className="bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 rounded-md border border-[#dbe6ea] bg-white px-3 py-2.5">
             <div className="min-w-0">
-              <div className="text-[10px] uppercase tracking-wider text-blue-200/70 leading-none">
+              <div className="text-[10px] uppercase tracking-wider leading-none text-slate-500">
                 Aktuell im Einsatz
               </div>
-              <div className="text-white font-semibold text-base mt-1 leading-none">
+              <div className="mt-1 text-base font-semibold leading-none text-[#0b1f33]">
                 {activeTeams === undefined
                   ? "—"
                   : `${activeTeams} ${activeTeams === 1 ? "Team" : "Teams"}`}
               </div>
             </div>
             <svg
-              className="w-5 h-5 text-emerald-300 flex-shrink-0"
+              className="h-5 w-5 flex-shrink-0 text-[#1f9b8f]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -132,17 +131,17 @@ export default function LiveOperations() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
             </svg>
           </div>
-          <div className="bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 rounded-md border border-[#dbe6ea] bg-white px-3 py-2.5">
             <div className="min-w-0">
-              <div className="text-[10px] uppercase tracking-wider text-blue-200/70 leading-none">
+              <div className="text-[10px] uppercase tracking-wider leading-none text-slate-500">
                 Nächster freier Termin
               </div>
-              <div className="text-white font-semibold text-base mt-1 leading-none truncate">
+              <div className="mt-1 truncate text-base font-semibold leading-none text-[#0b1f33]">
                 {LIVE_OPS.nextAvailableSlotText}
               </div>
             </div>
             <svg
-              className="w-5 h-5 text-blue-300 flex-shrink-0"
+              className="h-5 w-5 flex-shrink-0 text-[#1f7f78]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
