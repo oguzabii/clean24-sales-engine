@@ -1,17 +1,17 @@
 /**
- * Server-only discount-code validation against the Lead Autopilot API.
+ * Server-only discount-code validation against Clean24 OS.
  *
- * Uses CLEAN24_DISCOUNT_VALIDATE_URL + the existing CLEAN24_LEAD_WEBHOOK_SECRET
- * (sent as `x-webhook-secret`, server-to-server only — never exposed to the
+ * Uses CLEAN24_OS_DISCOUNT_VALIDATE_URL + CLEAN24_OS_INTAKE_SECRET
+ * (sent as `x-intake-secret`, server-to-server only — never exposed to the
  * browser). Returns the validated discount, or null when the code is invalid,
- * unknown, or validation is not configured/unreachable (graceful: no discount).
+ * unknown, or validation is not configured/unreachable.
  */
 import type { DiscountType, ValidatedDiscount } from "./discount";
 
 export async function validateDiscountCode(
   code: string
 ): Promise<ValidatedDiscount | null> {
-  const url = process.env.CLEAN24_DISCOUNT_VALIDATE_URL;
+  const url = process.env.CLEAN24_OS_DISCOUNT_VALIDATE_URL;
   const trimmed = code.trim();
   if (!url || !trimmed) return null;
 
@@ -20,11 +20,12 @@ export async function validateDiscountCode(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(process.env.CLEAN24_LEAD_WEBHOOK_SECRET
-          ? { "x-webhook-secret": process.env.CLEAN24_LEAD_WEBHOOK_SECRET }
+        ...(process.env.CLEAN24_OS_INTAKE_SECRET
+          ? { "x-intake-secret": process.env.CLEAN24_OS_INTAKE_SECRET }
           : {}),
       },
       body: JSON.stringify({ code: trimmed }),
+      cache: "no-store",
     });
     if (!res.ok) return null;
 
