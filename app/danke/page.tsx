@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY } from "@/lib/constants";
+import GoogleAdsConversion from "@/components/GoogleAdsConversion";
 
 export const metadata: Metadata = {
   title: "Vielen Dank für Ihre Anfrage",
@@ -32,9 +33,16 @@ export default async function DankePage({
   const { m } = await searchParams;
   const manualReview = m === "review";
   const steps = manualReview ? MANUAL_REVIEW_STEPS : MOVE_OUT_STEPS;
+  const adsConversionId = process.env.NEXT_PUBLIC_GADS_CONVERSION_ID?.trim();
+  const adsConversionLabel = process.env.NEXT_PUBLIC_GADS_FORM_CONVERSION_LABEL?.trim();
 
   return (
     <section className="min-h-screen bg-gray-50 flex items-center justify-center py-20 px-4">
+      <GoogleAdsConversion
+        conversionId={adsConversionId}
+        conversionLabel={adsConversionLabel}
+      />
+
       <div className="max-w-xl w-full text-center">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
