@@ -94,22 +94,22 @@ const CATEGORIES: Category[] = [
 
 export default function IncludedServices() {
   return (
-    <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div data-reveal className="text-center mb-14 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 rounded-full px-3 py-1 text-xs font-semibold mb-4 uppercase tracking-wider">
+    <section className="c24-section bg-white">
+      <div className="container-page">
+        <div data-reveal className="mx-auto mb-12 max-w-3xl text-center">
+          <div className="c24-eyebrow mb-4">
             Standardleistung
           </div>
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight text-[#0b1f33] md:text-4xl">
             Was ist in der Umzugsreinigung enthalten?
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="mx-auto max-w-2xl leading-relaxed text-slate-600">
             Unsere Standard-Umzugsreinigung deckt alle Bereiche ab, die Verwaltungen bei der Abgabe
             typischerweise prüfen – inklusive Begleitung bis zur erfolgreichen Übergabe.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {CATEGORIES.map((cat) => {
             const highlight = (cat as Category & { highlight?: boolean }).highlight;
             return (
@@ -118,19 +118,16 @@ export default function IncludedServices() {
                 data-reveal
                 className={
                   highlight
-                    ? "relative bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl p-7 shadow-[0_20px_50px_-12px_rgba(30,64,175,0.4)] overflow-hidden"
-                    : "group relative bg-white rounded-2xl p-7 border border-gray-100 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(30,64,175,0.08)] hover:border-blue-100 transition-all"
+                    ? "relative overflow-hidden rounded-lg bg-[#0b1f33] p-7 text-white"
+                    : "group relative rounded-lg border border-[#dbe6ea] bg-white p-7 transition-colors hover:border-[#9ac7c7]"
                 }
               >
-                {highlight && (
-                  <div className="absolute -top-24 -right-24 w-56 h-56 bg-blue-400/30 rounded-full blur-3xl pointer-events-none c24-glow" />
-                )}
                 <div className="relative">
                   <div
                     className={
                       highlight
-                        ? "w-11 h-11 rounded-xl bg-white/15 border border-white/20 text-white flex items-center justify-center mb-5"
-                        : "w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-5 group-hover:bg-blue-100 transition-colors"
+                        ? "mb-5 flex h-11 w-11 items-center justify-center rounded-md border border-white/20 bg-white/12 text-white"
+                        : "mb-5 flex h-11 w-11 items-center justify-center rounded-md bg-[#eefbf8] text-[#0f766e] transition-colors"
                     }
                   >
                     {cat.icon}
@@ -138,8 +135,8 @@ export default function IncludedServices() {
                   <h3
                     className={
                       highlight
-                        ? "font-semibold text-white mb-3 text-base"
-                        : "font-semibold text-gray-900 mb-3 text-base"
+                        ? "mb-3 text-base font-bold text-white"
+                        : "mb-3 text-base font-bold text-[#0b1f33]"
                     }
                   >
                     {cat.title}
@@ -150,15 +147,15 @@ export default function IncludedServices() {
                         key={item}
                         className={
                           highlight
-                            ? "flex items-start gap-2.5 text-sm text-blue-50/95"
-                            : "flex items-start gap-2.5 text-sm text-gray-700"
+                            ? "flex items-start gap-2.5 text-sm text-slate-100"
+                            : "flex items-start gap-2.5 text-sm text-slate-700"
                         }
                       >
                         <svg
                           className={
                             highlight
-                              ? "w-4 h-4 text-emerald-300 flex-shrink-0 mt-0.5"
-                              : "w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5"
+                              ? "mt-0.5 h-4 w-4 flex-shrink-0 text-teal-200"
+                              : "mt-0.5 h-4 w-4 flex-shrink-0 text-[#1f9b8f]"
                           }
                           fill="currentColor"
                           viewBox="0 0 20 20"

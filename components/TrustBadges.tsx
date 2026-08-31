@@ -65,31 +65,32 @@ export default function TrustBadges({
   subtitle = "Wir sind auf Umzugsreinigungen spezialisiert – mit klaren Prozessen, sofortiger Bestätigung und Begleitung bis zur erfolgreichen Wohnungsabgabe.",
 }: TrustBadgesProps) {
   return (
-    <section className="py-20 bg-gradient-to-b from-white to-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div data-reveal className="text-center mb-14 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 rounded-full px-3 py-1 text-xs font-semibold mb-4 uppercase tracking-wider">
+    <section className="c24-section bg-white">
+      <div className="container-page">
+        <div data-reveal className="mx-auto mb-12 max-w-2xl text-center">
+          <div className="c24-eyebrow mb-4">
             Warum Clean24
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight mb-3">
+          <h2 className="mb-3 text-3xl font-bold tracking-tight text-[#0b1f33] md:text-4xl">
             {title}
           </h2>
-          <p className="text-gray-500 leading-relaxed">{subtitle}</p>
+          <p className="leading-relaxed text-slate-600">{subtitle}</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 border-y border-[#dbe6ea] sm:grid-cols-2 lg:grid-cols-3">
           {badges.map((badge) => (
             <div
               key={badge.title}
               data-reveal
-              className="group relative bg-white rounded-2xl p-6 lg:p-7 border border-gray-100 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_rgba(30,64,175,0.08)] hover:-translate-y-0.5 hover:border-blue-100 transition-all duration-300"
+              className="border-b border-[#dbe6ea] p-6 sm:border-r lg:p-8 [&:nth-child(3n)]:lg:border-r-0 [&:nth-last-child(-n+3)]:lg:border-b-0"
             >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-50 to-transparent rounded-bl-[80%] opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center mb-5 shadow-md shadow-blue-900/10">
+              <div className="flex gap-4">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md bg-[#eefbf8] text-[#0f766e]">
                   {badge.icon}
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2 text-base">{badge.title}</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{badge.desc}</p>
+                <div>
+                  <h3 className="mb-2 text-base font-bold text-[#0b1f33]">{badge.title}</h3>
+                  <p className="text-sm leading-relaxed text-slate-600">{badge.desc}</p>
+                </div>
               </div>
             </div>
           ))}
