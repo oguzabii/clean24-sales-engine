@@ -19,6 +19,29 @@ const REQUIRED_FIELDS: (keyof ThinClientFormData)[] = [
   "quote_token",
 ];
 
+const CONSENT_COOKIE = "c24_google_consent";
+const ACQUISITION_COOKIE = "c24_google_acquisition";
+const CONVERSION_COOKIE = "c24_google_conversion";
+
+type ConsentState = "granted" | "denied";
+
+type Acquisition = {
+  page_path: string | null;
+  referrer: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  gclid: string | null;
+  gbraid: string | null;
+  wbraid: string | null;
+  ad_user_data_consent: ConsentState;
+  ad_personalization_consent: ConsentState;
+};
+
+type StoredAcquisition = Partial<
+  Pick<Acquisition, "page_path" | "referrer" | "utm_source" | "utm_medium" | "utm_campaign" | "gclid" | "gbraid" | "wbraid">
+>;
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 /** Die Einreichung darf so lange laufen, wie Clean24 OS für Lead und Offerte braucht. */
@@ -78,8 +101,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const intake = await createClean24OsClient().intake(buildIntakeRequest(data, token.quote_id, token.submission_id));
-    return NextResponse.json(
+    const intakeRequest = {
+      ...buildIntakeRequest(data, token.quote_id, token.submission_id),
+      acquisition: buildAcquisition(request),
+    };
+    const intake = await createClean24OsClient().intake(intakeRequest);
+    const response = NextResponse.json(
       {
         success: true,
         pricing_mode: intake.pricing_mode,
@@ -87,6 +114,18 @@ export async function POST(request: Request) {
       },
       { status: intake.status === "created" ? 201 : 200 }
     );
+
+    if (shouldArmGoogleAdsConversion(request)) {
+      response.cookies.set(CONVERSION_COOKIE, intake.lead_id, {
+        path: "/",
+        maxAge: 300,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: false,
+      });
+    }
+
+    return response;
   } catch (error) {
     if (error instanceof Clean24OsClientError) {
       return NextResponse.json(
@@ -96,6 +135,79 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: "Anfrage konnte momentan nicht übermittelt werden." }, { status: 500 });
   }
+}
+
+function buildAcquisition(request: Request): Acquisition {
+  const cookies = parseCookies(request.headers.get("cookie"));
+  const consent: ConsentState = cookies[CONSENT_COOKIE] === "granted" ? "granted" : "denied";
+  const refererUrl = safeUrl(request.headers.get("referer"));
+  const stored = consent === "granted" ? parseStoredAcquisition(cookies[ACQUISITION_COOKIE]) : {};
+
+  const currentParam = (name: string, max: number) => clamp(refererUrl?.searchParams.get(name) ?? null, max);
+  const storedValue = (name: keyof StoredAcquisition, max: number) => clamp(stored[name] ?? null, max);
+  const clickId = (name: "gclid" | "gbraid" | "wbraid") =>
+    consent === "granted" ? storedValue(name, 500) ?? currentParam(name, 500) : null;
+
+  return {
+    page_path: clamp(refererUrl ? `${refererUrl.pathname}${refererUrl.search}` : stored.page_path ?? null, 300),
+    referrer: storedValue("referrer", 1000),
+    utm_source: storedValue("utm_source", 200) ?? currentParam("utm_source", 200),
+    utm_medium: storedValue("utm_medium", 200) ?? currentParam("utm_medium", 200),
+    utm_campaign: storedValue("utm_campaign", 300) ?? currentParam("utm_campaign", 300),
+    gclid: clickId("gclid"),
+    gbraid: clickId("gbraid"),
+    wbraid: clickId("wbraid"),
+    ad_user_data_consent: consent,
+    ad_personalization_consent: consent,
+  };
+}
+
+function shouldArmGoogleAdsConversion(request: Request): boolean {
+  const cookies = parseCookies(request.headers.get("cookie"));
+  if (cookies[CONSENT_COOKIE] !== "granted") return false;
+  return Boolean(
+    process.env.NEXT_PUBLIC_GADS_CONVERSION_ID?.trim() &&
+      process.env.NEXT_PUBLIC_GADS_FORM_CONVERSION_LABEL?.trim()
+  );
+}
+
+function parseCookies(header: string | null): Record<string, string> {
+  if (!header) return {};
+  return Object.fromEntries(
+    header
+      .split(";")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const index = part.indexOf("=");
+        return index === -1 ? [part, ""] : [part.slice(0, index), part.slice(index + 1)];
+      })
+  );
+}
+
+function parseStoredAcquisition(raw: string | undefined): StoredAcquisition {
+  if (!raw) return {};
+  try {
+    const value = JSON.parse(decodeURIComponent(raw));
+    return value && typeof value === "object" && !Array.isArray(value) ? (value as StoredAcquisition) : {};
+  } catch {
+    return {};
+  }
+}
+
+function safeUrl(value: string | null): URL | null {
+  if (!value) return null;
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
+function clamp(value: unknown, max: number): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, max) : null;
 }
 
 function validateAttachmentIds(value: unknown): string | null {
