@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Caveat } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
@@ -7,6 +7,10 @@ import Footer from "@/components/Footer";
 const geist = Geist({ subsets: ["latin"] });
 // Handwritten accent used sparingly in the quotation sidebar.
 const caveat = Caveat({ subsets: ["latin"], weight: ["600"], variable: "--font-script" });
+
+export const viewport: Viewport = {
+  themeColor: "#14a9bd",
+};
 
 export const metadata: Metadata = {
   title: {
