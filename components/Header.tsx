@@ -15,19 +15,22 @@ export default function Header() {
     <header className="fixed inset-x-0 top-0 z-50 bg-white border-b border-slate-200/80">
       <div className="max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-10">
         <div className="flex h-20 md:h-24 items-center justify-between gap-6">
-          <Link href="/" className="flex flex-col justify-center" aria-label="Clean24 – Startseite">
+          {/* Full-colour asset (public/clean24-logo.png) — the -light variant is
+              a white silhouette for dark grounds. Width is set and height left
+              auto so the 1380×671 artwork keeps its natural aspect ratio; the
+              file carries ~2% side padding, so the visual mark reads slightly
+              narrower than the box. The wordmark already contains the claim
+              "Ihr Reinigungsprofi", so no separate tagline is set beneath it. */}
+          <Link href="/" className="flex items-center" aria-label="Clean24 – Startseite">
             <Image
               src="/clean24-logo.png"
-              alt="Clean24"
+              alt="Clean24 – Ihr Reinigungsprofi"
               width={1380}
               height={671}
               priority
-              className="h-9 md:h-11 w-auto select-none"
+              className="w-[124px] md:w-[148px] h-auto select-none"
               draggable={false}
             />
-            <span className="mt-0.5 text-[10.5px] md:text-[11px] text-slate-500 tracking-wide">
-              Sauberkeit mit System.
-            </span>
           </Link>
 
           <div className="flex items-center gap-5 md:gap-7">
