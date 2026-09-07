@@ -3,8 +3,8 @@ import { COMPANY } from "@/lib/constants";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-400">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer className="bg-navy-950 text-slate-400">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 items-start">
           {/* Brand: real full-colour Clean24 logo (transparent PNG) directly on
               the dark footer — no card/background. */}
@@ -26,7 +26,7 @@ export default function Footer() {
 
           {/* Contact / company info */}
           <div className="md:text-right">
-            <div className="text-white font-semibold mb-3 text-sm uppercase tracking-wider">Kontakt</div>
+            <div className="text-white font-medium mb-3 text-[11px] uppercase tracking-[0.16em]">Kontakt</div>
             <ul className="space-y-2 text-sm">
               <li>{COMPANY.name}</li>
               <li>
@@ -42,12 +42,12 @@ export default function Footer() {
                   {COMPANY.email}
                 </a>
               </li>
-              <li className="text-xs text-gray-500 mt-2">MwSt Nr.: {COMPANY.mwst}</li>
+              <li className="text-xs text-slate-500 mt-2">MwSt Nr.: {COMPANY.mwst}</li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+        <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© {new Date().getFullYear()} {COMPANY.name}. Alle Rechte vorbehalten.</p>
           <p>Ihr Reinigungsservice – Umzugsreinigung mit Abgabegarantie.</p>
         </div>

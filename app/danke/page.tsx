@@ -9,14 +9,14 @@ export const metadata: Metadata = {
 };
 
 const MOVE_OUT_STEPS = [
-  { step: "1", text: "Eingangsbestätigung und Richtpreis per E-Mail." },
+  { step: "1", text: "Ihre Anfrage wurde erfolgreich übermittelt." },
   { step: "2", text: "Prüfung Ihrer Angaben durch Clean24." },
   { step: "3", text: "Rückmeldung mit Fixpreis und Terminvorschlag." },
   { step: "4", text: "Reinigung mit Abgabegarantie nach Terminbestätigung." },
 ];
 
 const MANUAL_REVIEW_STEPS = [
-  { step: "1", text: "Eingangsbestätigung per E-Mail." },
+  { step: "1", text: "Ihre Anfrage wurde erfolgreich übermittelt." },
   { step: "2", text: "Individuelle Prüfung Ihrer Angaben durch Clean24." },
   { step: "3", text: "Rückmeldung mit einer passenden Offerte." },
   { step: "4", text: "Ausführung nach Terminbestätigung." },
@@ -48,16 +48,16 @@ export default async function DankePage({
         {manualReview ? (
           <>
             <p className="text-gray-600 mb-3 leading-relaxed">
-              Ihre Anfrage wurde übermittelt. Wir prüfen die Angaben und melden uns mit einer <strong>individuellen Offerte</strong>.
+              Ihre Anfrage wurde erfolgreich übermittelt. Wir prüfen die Angaben und melden uns mit einer <strong>individuellen Offerte</strong>.
             </p>
             <p className="text-gray-600 mb-8 leading-relaxed">
-              Sie erhalten eine Eingangsbestätigung per E-Mail – bitte prüfen Sie ggf. auch den Spam-Ordner. Bei Fragen erreichen Sie uns telefonisch unter <strong>044 516 19 23</strong> oder per E-Mail an <strong>info@clean-24.ch</strong>.
+              Bei Fragen erreichen Sie uns telefonisch unter <strong>044 516 19 23</strong> oder per E-Mail an <strong>info@clean-24.ch</strong>.
             </p>
           </>
         ) : (
           <>
             <p className="text-gray-600 mb-3 leading-relaxed">
-              Ihre Anfrage wurde erhalten. Wir haben Ihnen eine <strong>Eingangsbestätigung mit Ihrem Richtpreis</strong> per E-Mail gesendet – bitte prüfen Sie ggf. auch den Spam-Ordner.
+              Ihre Anfrage wurde erfolgreich übermittelt. Wir bearbeiten Ihre Angaben jetzt und melden uns mit der <strong>Offerte</strong>.
             </p>
             <p className="text-gray-600 mb-8 leading-relaxed">
               Clean24 prüft Ihre Angaben und meldet sich anschliessend mit <strong>Fixpreis und Terminvorschlag</strong>. Bei Fragen erreichen Sie uns telefonisch unter <strong>044 516 19 23</strong> oder per E-Mail an <strong>info@clean-24.ch</strong>.

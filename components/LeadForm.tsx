@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CITIES } from "@/lib/constants";
+import { MAX_LEAD_FILES, uploadLeadFiles, validateLeadFiles } from "@/lib/attachments";
 import {
   INQUIRY_RECURRENCE_OPTIONS,
   MOVE_OUT_CATEGORY,
@@ -10,7 +11,26 @@ import {
   RECURRENCE_COUNT_CONFIG,
   buildRecurrenceSummary,
 } from "@/lib/service-categories";
-import type { LeadAttachmentRef, LeadFormData } from "@/lib/lead-payload";
+import type { LeadFormData } from "@/lib/lead-payload";
+import type { LocalLeadFile } from "@/lib/attachments";
+import { formatRichtpreis } from "@/lib/richtpreis";
+import { inquiryPricingInput, inquiryQuoteSelection, recurrencePatch, recurrenceSelection, type InquiryQuoteSelection } from "@/lib/inquiry-pricing-input";
+import { needsFloorArea, recurrenceOptionsFor } from "@/lib/inquiry-fields";
+import InquiryPricingFields from "./InquiryPricingFields";
+import type { AmountBasis } from "@/lib/sales-engine-contract";
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconCalendar,
+  IconCoins,
+  IconMail,
+  IconNote,
+  IconPhone,
+  IconPhoto,
+  IconPin,
+  IconTag,
+  IconUser,
+} from "./icons";
 
 interface LeadFormProps {
   prefilledData?: Partial<LeadFormData>;
@@ -18,20 +38,26 @@ interface LeadFormProps {
   estimatedMax?: number;
   onBack?: () => void;
   pagePath?: string;
-  /**
-   * Service the form is submitted for. The Sales Engine currently only sells
-   * Umzugsreinigung; recurring services show the "Wiederholung" selector.
-   */
+  /** Service selected in the existing category flow. */
   serviceType?: string;
   /**
    * Service category (lib/service-categories.ts). move_out_cleaning (default)
-   * keeps the full Umzugsreinigung form incl. Richtpreis; every other
-   * category renders the simplified manual-review inquiry.
+   * keeps the full Umzugsreinigung form; other categories use OS input fields.
    */
   serviceCategory?: string;
+  quoteToken?: string;
+  amountBasis?: AmountBasis;
+  onInquiryPricingChange?: (input: InquiryQuoteSelection | null) => void;
 }
 
 type FormState = Omit<LeadFormData, "source" | "service_type">;
+
+function newUploadId(): string {
+  const id = typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `upload:${id}`;
+}
 
 /** Services that show the recurrence ("Wiederholung") selector. */
 const RECURRING_SERVICE_TYPES = [
@@ -47,31 +73,40 @@ const RECURRENCE_OPTIONS: { value: string; label: string }[] = [
   { value: "other", label: "Andere" },
 ];
 
-/* ---- Optional photo/file upload (Lead Autopilot upload endpoint) ---- */
-// Limits mirror the Lead Autopilot server-side rules (max. 10 files à 10 MB,
-// JPG/PNG/WEBP/PDF). Client checks are UX only — the backend re-validates.
-const MAX_UPLOAD_FILES = 10;
-const MAX_UPLOAD_FILE_BYTES = 10 * 1024 * 1024;
-const ALLOWED_UPLOAD_MIMES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "application/pdf",
-];
-const ALLOWED_UPLOAD_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+/* ---- Field presentation (approved UI) ---- */
+const CARD = "rounded-2xl border border-slate-200 bg-white p-5 sm:p-6";
+const FIELD =
+  "w-full min-h-[46px] rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-[14.5px] text-ink placeholder:text-slate-400 transition-colors duration-200 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20";
+const FIELD_WITH_ICON = FIELD + " pl-10";
+const FIELD_ICON =
+  "pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400";
+const LABEL = "block text-[13px] text-slate-600 mb-1.5";
+const HINT = "mt-1.5 text-[12px] text-slate-500 leading-snug";
+const REQUIRED_MARK = <span className="text-red-500">*</span>;
 
-const UPLOAD_ERROR_TOO_MANY = "Bitte laden Sie maximal 10 Dateien hoch.";
-const UPLOAD_ERROR_TOO_LARGE = "Eine Datei ist zu gross. Maximal 10 MB pro Datei.";
-const UPLOAD_ERROR_BAD_TYPE = "Bitte laden Sie nur JPG, PNG, WEBP oder PDF hoch.";
-const UPLOAD_ERROR_FAILED =
-  "Die Fotos konnten nicht hochgeladen werden. Bitte versuchen Sie es erneut oder senden Sie die Anfrage ohne Fotos.";
-const UPLOAD_ERROR_NOT_AVAILABLE =
-  "Foto-Upload ist aktuell nicht verfügbar. Bitte senden Sie die Anfrage ohne Fotos.";
-
-function isAllowedUploadFile(file: File): boolean {
-  if (ALLOWED_UPLOAD_MIMES.includes(file.type)) return true;
-  const name = file.name.toLowerCase();
-  return ALLOWED_UPLOAD_EXTENSIONS.some((ext) => name.endsWith(ext));
+/** Section header inside the form: icon, title and one line of context. */
+function GroupTitle({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: (p: { className?: string }) => React.ReactElement;
+  title: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 mb-5">
+      <span className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-teal-50 text-teal-600">
+        <Icon className="w-[18px] h-[18px]" />
+      </span>
+      <span className="min-w-0">
+        <h3 className="text-[15px] font-semibold text-ink leading-snug">{title}</h3>
+        {children && (
+          <p className="text-[12.5px] text-slate-500 mt-0.5 leading-snug">{children}</p>
+        )}
+      </span>
+    </div>
+  );
 }
 
 function formatFileSizeMb(bytes: number): string {
@@ -87,15 +122,17 @@ export default function LeadForm({
   pagePath,
   serviceType = "umzugsreinigung",
   serviceCategory = MOVE_OUT_CATEGORY,
+  quoteToken,
+  amountBasis = "one_off",
+  onInquiryPricingChange,
 }: LeadFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Optional photos/files — uploaded to the Lead Autopilot on submit; only
+  // Optional photos/files — uploaded privately to OS on submit; only
   // the returned references go into the lead payload (never file contents).
-  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [uploadFiles, setUploadFiles] = useState<LocalLeadFile[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const [form, setForm] = useState<Partial<FormState>>({
@@ -107,11 +144,17 @@ export default function LeadForm({
     ...prefilledData,
   });
 
-  // move_out_cleaning keeps the full Umzugsreinigung form; everything else is
-  // a manual-review inquiry (no Richtpreis, no Abgabe fields, no Rabattcode).
+  // Move-out retains its historical form; new categories share its field styles.
   const isMoveOut = serviceCategory === MOVE_OUT_CATEGORY;
   const isUmzugsreinigung = isMoveOut && serviceType === "umzugsreinigung";
   const isRecurringService = RECURRING_SERVICE_TYPES.includes(serviceType);
+  const contractRecurrences = recurrenceOptionsFor(serviceCategory);
+  const floorAreaRequired = needsFloorArea(serviceCategory, form.pricing_inputs?.subtype);
+  const showFloorArea = isMoveOut || floorAreaRequired;
+  const residentialObject = serviceCategory === "construction_cleaning" || serviceCategory === "private_cleaning";
+  const deepObject = serviceCategory === "deep_cleaning" || (serviceCategory === "special_cleaning" && form.pricing_inputs?.subtype === "nicotine");
+  const objectOptions = OBJECT_TYPE_OPTIONS.filter((o) => residentialObject ? ["wohnung", "haus"].includes(o.value)
+    : deepObject ? ["wohnung", "haus", "buero_gewerbe"].includes(o.value) : true);
 
   // Optional Rabattcode — validated server-side via the Autopilot API.
   const [discountCode, setDiscountCode] = useState("");
@@ -124,61 +167,42 @@ export default function LeadForm({
   const [discountChecking, setDiscountChecking] = useState(false);
   const [discountError, setDiscountError] = useState<string | null>(null);
 
-  const applyDiscount = async () => {
+  const applyDiscount = () => {
     const code = discountCode.trim();
     if (!code) return;
     setDiscountChecking(true);
     setDiscountError(null);
-    try {
-      const res = await fetch("/api/discount/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // The preview endpoint recalculates from selections with the same pure
-        // pricing function as the submit route; client price amounts are not
-        // accepted as authoritative inputs.
-        body: JSON.stringify({
-          code,
-          apartment_size: form.apartment_size,
-          property_type: form.property_type,
-          addons: form.addons,
-          express: form.express,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (data?.valid) {
-        setDiscount({
-          code: data.code,
-          label: data.label,
-          priceMin: data.price_min,
-          priceMax: data.price_max,
-        });
-      } else {
-        setDiscount(null);
-        setDiscountError("Code ungültig oder abgelaufen.");
-      }
-    } catch {
-      setDiscount(null);
-      setDiscountError("Prüfung fehlgeschlagen. Bitte später erneut versuchen.");
-    } finally {
-      setDiscountChecking(false);
-    }
+    setDiscount({ code, label: "wird mit Ihrer Anfrage geprüft" });
+    setDiscountChecking(false);
   };
 
   const updateField = (key: keyof FormState, value: string | boolean | Record<string, boolean>) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    const next = { ...form, [key]: value };
+    setForm(next);
+    if (!isMoveOut && (key === "object_type" || key === "square_meters")) {
+      onInquiryPricingChange?.(inquiryQuoteSelection({ ...next, service_category: serviceCategory }));
+    }
+  };
+
+  const updateInquiry = (patch: Partial<LeadFormData>) => {
+    const next = { ...form, ...patch };
+    setForm(next);
+    onInquiryPricingChange?.(inquiryQuoteSelection({ ...next, service_category: serviceCategory }));
   };
 
   // Non-move-out recurrence. Changing the main rhythm resets the conditional
   // count + unit so no stale detail lingers; the summary is recomputed for the
   // new rhythm (base label until a count is picked).
   const handleInquiryRecurrenceChange = (value: string) => {
-    setForm((prev) => ({
-      ...prev,
+    const next = {
+      ...form,
       recurrence: value,
       recurrence_count: undefined,
       recurrence_unit: undefined,
       recurrence_summary: buildRecurrenceSummary(value, undefined),
-    }));
+    };
+    setForm(next);
+    onInquiryPricingChange?.(inquiryQuoteSelection({ ...next, service_category: serviceCategory }));
   };
 
   // Count select (weekly / biweekly / monthly only) → store count, unit and
@@ -186,12 +210,14 @@ export default function LeadForm({
   const handleRecurrenceCountChange = (recurrence: string, raw: string) => {
     const count = raw ? Number(raw) : undefined;
     const cfg = RECURRENCE_COUNT_CONFIG[recurrence];
-    setForm((prev) => ({
-      ...prev,
+    const next = {
+      ...form,
       recurrence_count: count,
       recurrence_unit: count != null ? cfg?.unit : undefined,
       recurrence_summary: buildRecurrenceSummary(recurrence, count),
-    }));
+    };
+    setForm(next);
+    onInquiryPricingChange?.(inquiryQuoteSelection({ ...next, service_category: serviceCategory }));
   };
 
   const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,73 +228,23 @@ export default function LeadForm({
 
     setUploadError(null);
 
-    if (uploadFiles.length + selected.length > MAX_UPLOAD_FILES) {
-      setUploadError(UPLOAD_ERROR_TOO_MANY);
-      return;
-    }
-    if (selected.some((f) => !isAllowedUploadFile(f))) {
-      setUploadError(UPLOAD_ERROR_BAD_TYPE);
-      return;
-    }
-    if (selected.some((f) => f.size > MAX_UPLOAD_FILE_BYTES)) {
-      setUploadError(UPLOAD_ERROR_TOO_LARGE);
-      return;
-    }
-
-    setUploadFiles((prev) => [...prev, ...selected]);
+    const merged = [...uploadFiles, ...selected.map((file) => ({ file, upload_id: newUploadId() }))].slice(0, MAX_LEAD_FILES);
+    setUploadFiles(merged);
+    setUploadError(validateLeadFiles(merged.map((entry) => entry.file)));
   };
 
   const removeUploadFile = (index: number) => {
     setUploadFiles((prev) => prev.filter((_, i) => i !== index));
-    setUploadError(null);
-  };
-
-  /**
-   * Uploads the selected files to the Lead Autopilot upload endpoint and
-   * returns the attachment references for the lead payload. Returns `null`
-   * when no files are selected. Throws with a customer-friendly message when
-   * the upload is unavailable or fails — the lead submit is then blocked.
-   */
-  const uploadPhotos = async (): Promise<LeadAttachmentRef[] | null> => {
-    if (uploadFiles.length === 0) return null;
-
-    // UX re-check before upload — the backend validates again server-side.
-    if (uploadFiles.length > MAX_UPLOAD_FILES) throw new Error(UPLOAD_ERROR_TOO_MANY);
-    if (uploadFiles.some((f) => !isAllowedUploadFile(f))) throw new Error(UPLOAD_ERROR_BAD_TYPE);
-    if (uploadFiles.some((f) => f.size > MAX_UPLOAD_FILE_BYTES))
-      throw new Error(UPLOAD_ERROR_TOO_LARGE);
-
-    const uploadUrl = process.env.NEXT_PUBLIC_CLEAN24_LEAD_UPLOAD_URL;
-    if (!uploadUrl) throw new Error(UPLOAD_ERROR_NOT_AVAILABLE);
-
-    setUploadingPhotos(true);
-    try {
-      const formData = new FormData();
-      for (const file of uploadFiles) formData.append("files", file);
-
-      const res = await fetch(uploadUrl, { method: "POST", body: formData });
-      const data = await res.json().catch(() => null);
-      if (
-        !res.ok ||
-        !data?.ok ||
-        !Array.isArray(data.attachments) ||
-        data.attachments.length === 0
-      ) {
-        throw new Error(UPLOAD_ERROR_FAILED);
-      }
-      return data.attachments as LeadAttachmentRef[];
-    } catch (err) {
-      // Network errors etc. also surface as the friendly upload message.
-      throw err instanceof Error && err.message === UPLOAD_ERROR_FAILED
-        ? err
-        : new Error(UPLOAD_ERROR_FAILED);
-    } finally {
-      setUploadingPhotos(false);
-    }
+    setUploadError(validateLeadFiles(uploadFiles.filter((_, i) => i !== index).map((entry) => entry.file)));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!(form.cleaning_date ?? "").trim()) {
+      setError("Bitte wählen Sie einen Reinigungstermin aus.");
+      return;
+    }
 
     // Abgabezeit only makes sense together with an Abgabetermin (move-out only).
     if (isMoveOut && (form.handover_time ?? "").trim() && !(form.handover_date ?? "").trim()) {
@@ -288,9 +264,8 @@ export default function LeadForm({
     setUploadError(null);
 
     try {
-      // Upload photos first (if any) — on failure the submit is blocked and
-      // the customer sees a clear error. Without files nothing changes.
-      const attachments = await uploadPhotos();
+      if (!quoteToken) throw new Error("Ihre Angaben werden noch geprüft. Bitte versuchen Sie es gleich nochmals.");
+      const uploadedAttachments = await uploadLeadFiles(uploadFiles);
 
       const utmParams =
         typeof window !== "undefined"
@@ -300,7 +275,11 @@ export default function LeadForm({
       const payload = {
         ...form,
         service_category: serviceCategory,
-        attachments: attachments ?? undefined,
+        attachments: uploadedAttachments.map((attachment) => attachment.attachment_id),
+        quote_token: quoteToken,
+        pricing_inputs: !isMoveOut
+          ? inquiryPricingInput({ ...form, service_category: serviceCategory }) ?? undefined
+          : undefined,
         // Move-out-only fields never travel for manual-review inquiries.
         apartment_size: isMoveOut ? form.apartment_size : undefined,
         addons: isMoveOut ? form.addons : undefined,
@@ -329,7 +308,7 @@ export default function LeadForm({
         recurrence_unit: !isMoveOut ? form.recurrence_unit : undefined,
         recurrence_summary: !isMoveOut ? form.recurrence_summary : undefined,
         // Rabattcode applies only to the automatic Richtpreis (move-out).
-        discount_code: isMoveOut ? discountCode.trim() || undefined : undefined,
+        discount_code: discountCode.trim() || undefined,
         page_path: pagePath ?? (typeof window !== "undefined" ? window.location.pathname : "/"),
         utm_source: utmParams.utm_source,
         utm_medium: utmParams.utm_medium,
@@ -355,388 +334,426 @@ export default function LeadForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {isMoveOut && estimatedMin && estimatedMax && (
-        <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-700">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {estimatedMin && estimatedMax && (
+        <div className="rounded-xl border border-teal-500/20 bg-teal-50/60 px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <IconCoins className="w-4 h-4 text-teal-600 flex-shrink-0" />
+            <span className="text-[11.5px] text-slate-600">
+              {amountBasis === "monthly" ? "Ihr monatlicher Richtpreis" : "Ihr Richtpreis"}
+            </span>
+          </div>
           {discount && discount.priceMin != null && discount.priceMax != null ? (
             <>
-              Ihr Richtpreis:{" "}
-              <span className="line-through text-blue-400">
-                CHF {estimatedMin} – CHF {estimatedMax}
-              </span>{" "}
-              <strong>
-                CHF {discount.priceMin} – CHF {discount.priceMax}
-              </strong>
-              <span className="block text-xs text-green-600 mt-0.5">
+              <div className="mt-1 text-[20px] font-semibold tracking-[-0.02em] text-ink tabular-nums">
+                {formatRichtpreis({ min: discount.priceMin, max: discount.priceMax })}
+              </div>
+              <div className="mt-0.5 text-[12px] text-slate-500 line-through tabular-nums">
+                {formatRichtpreis({ min: estimatedMin, max: estimatedMax })}
+              </div>
+              <span className="block text-[12px] text-teal-700 mt-0.5">
                 Rabatt {discount.code} (−{discount.label}) angewendet.
               </span>
             </>
           ) : (
-            <>
-              Ihr Richtpreis: <strong>CHF {estimatedMin} – CHF {estimatedMax}</strong>
-            </>
+            <div className="mt-1 text-[20px] font-semibold tracking-[-0.02em] text-ink tabular-nums">
+              {formatRichtpreis({ min: estimatedMin, max: estimatedMax })}
+            </div>
           )}
-          <span className="block text-xs text-blue-400 mt-0.5">
+          <span className="block text-[11.5px] text-slate-500 mt-1">
             Wird nach Prüfung Ihrer Angaben bestätigt.
           </span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            value={form.customer_name ?? ""}
-            onChange={(e) => updateField("customer_name", e.target.value)}
-            placeholder="Vorname Nachname"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Telefon <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="tel"
-            required
-            value={form.phone ?? ""}
-            onChange={(e) => updateField("phone", e.target.value)}
-            placeholder="+41 79 000 00 00"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
+      {/* ---- Persönliche Angaben ---- */}
+      <section className={CARD}>
+        <GroupTitle icon={IconUser} title="Persönliche Angaben">
+          Wir melden uns mit der Offerte bei Ihnen.
+        </GroupTitle>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          E-Mail <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="email"
-          required
-          value={form.email ?? ""}
-          onChange={(e) => updateField("email", e.target.value)}
-          placeholder="ihre@email.ch"
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Adresse / Strasse und Hausnummer <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          required
-          value={form.address ?? ""}
-          onChange={(e) => updateField("address", e.target.value)}
-          placeholder="Musterstrasse 12"
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            PLZ <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            value={form.zip ?? ""}
-            onChange={(e) => updateField("zip", e.target.value)}
-            placeholder="8953"
-            maxLength={4}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Ort <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            list="city-list"
-            value={form.city ?? ""}
-            onChange={(e) => updateField("city", e.target.value)}
-            placeholder="Dietikon"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <datalist id="city-list">
-            {CITIES.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </div>
-      </div>
-
-      {isMoveOut ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Reinigungsdatum <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={form.cleaning_date ?? ""}
-              onChange={(e) => updateField("cleaning_date", e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Abgabetermin (optional)
-            </label>
-            <input
-              type="date"
-              value={form.handover_date ?? ""}
-              onChange={(e) => updateField("handover_date", e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Abgabezeit (optional)
-            </label>
-            <input
-              type="time"
-              value={form.handover_time ?? ""}
-              onChange={(e) => updateField("handover_time", e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="mt-1 text-xs text-gray-400 leading-snug">
-              Optional – falls die Uhrzeit der Wohnungsabgabe bereits bekannt ist.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Objektart <span className="text-red-500">*</span>
-            </label>
-            <select
-              required
-              value={form.object_type ?? ""}
-              onChange={(e) => updateField("object_type", e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Bitte wählen</option>
-              {OBJECT_TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Gewünschter Termin (optional)
-            </label>
-            <input
-              type="date"
-              value={form.cleaning_date ?? ""}
-              onChange={(e) => updateField("cleaning_date", e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Wiederholung
-            </label>
-            <select
-              value={form.recurrence ?? ""}
-              onChange={(e) => handleInquiryRecurrenceChange(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Bitte wählen</option>
-              {INQUIRY_RECURRENCE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {form.recurrence && RECURRENCE_COUNT_CONFIG[form.recurrence] && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {RECURRENCE_COUNT_CONFIG[form.recurrence].label}
-              </label>
-              <select
-                value={form.recurrence_count ?? ""}
-                onChange={(e) =>
-                  handleRecurrenceCountChange(form.recurrence as string, e.target.value)
-                }
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              >
-                <option value="">Bitte wählen</option>
-                {Array.from(
-                  { length: RECURRENCE_COUNT_CONFIG[form.recurrence].max },
-                  (_, i) => i + 1
-                ).map((n) => (
-                  <option key={n} value={n}>
-                    {RECURRENCE_COUNT_CONFIG[form.recurrence as string].optionLabel(n)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      )}
-
-      {(isUmzugsreinigung || isRecurringService) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {isUmzugsreinigung && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Abgabegarantie gewünscht?
-              </label>
-              <select
-                value={(form.handover_guarantee_requested ?? true) ? "ja" : "nein"}
-                onChange={(e) =>
-                  updateField("handover_guarantee_requested", e.target.value === "ja")
-                }
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              >
-                <option value="ja">Ja</option>
-                <option value="nein">Nein</option>
-              </select>
+          <div>
+            <label className={LABEL}>
+              Name {REQUIRED_MARK}
+            </label>
+            <input
+              type="text"
+              required
+              value={form.customer_name ?? ""}
+              onChange={(e) => updateField("customer_name", e.target.value)}
+              placeholder="z. B. Max Muster"
+              className={FIELD}
+            />
+          </div>
+          <div>
+            <label className={LABEL}>
+              Telefon {REQUIRED_MARK}
+            </label>
+            <div className="relative">
+              <IconPhone className={FIELD_ICON} />
+              <input
+                type="tel"
+                required
+                value={form.phone ?? ""}
+                onChange={(e) => updateField("phone", e.target.value)}
+                placeholder="z. B. 079 123 45 67"
+                className={FIELD_WITH_ICON}
+              />
             </div>
-          )}
-          {isRecurringService && (
+          </div>
+          <div className="sm:col-span-2">
+            <label className={LABEL}>
+              E-Mail {REQUIRED_MARK}
+            </label>
+            <div className="relative">
+              <IconMail className={FIELD_ICON} />
+              <input
+                type="email"
+                required
+                value={form.email ?? ""}
+                onChange={(e) => updateField("email", e.target.value)}
+                placeholder="z. B. name@beispiel.ch"
+                className={FIELD_WITH_ICON}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- Adresse ---- */}
+      <section className={CARD}>
+        <GroupTitle
+          icon={IconPin}
+          title={isMoveOut ? "Adresse der zu reinigenden Wohnung" : "Adresse des Objekts"}
+        >
+          Damit wir die Gegebenheiten besser einschätzen können.
+        </GroupTitle>
+
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="sm:col-span-2">
+            <label className={LABEL}>
+              Strasse {REQUIRED_MARK}
+            </label>
+            <input
+              type="text"
+              required
+              value={form.address ?? ""}
+              onChange={(e) => updateField("address", e.target.value)}
+              placeholder="z. B. Bahnhofstrasse 1"
+              className={FIELD}
+            />
+          </div>
+          <div>
+            <label className={LABEL}>
+              PLZ {REQUIRED_MARK}
+            </label>
+            <input
+              type="text"
+              required
+              value={form.zip ?? ""}
+              onChange={(e) => updateField("zip", e.target.value)}
+              placeholder="z. B. 8001"
+              maxLength={4}
+              className={FIELD}
+            />
+          </div>
+          <div>
+            <label className={LABEL}>
+              Ort {REQUIRED_MARK}
+            </label>
+            <input
+              type="text"
+              required
+              list="city-list"
+              value={form.city ?? ""}
+              onChange={(e) => updateField("city", e.target.value)}
+              placeholder="z. B. Zürich"
+              className={FIELD}
+            />
+            <datalist id="city-list">
+              {CITIES.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- Objekt & Termin ---- */}
+      <section className={CARD}>
+        <GroupTitle icon={IconCalendar} title={isMoveOut ? "Wunschtermin" : "Objekt & Termin"}>
+          {isMoveOut
+            ? "Wann soll die Reinigung stattfinden?"
+            : "Worum geht es und wann soll die Reinigung stattfinden?"}
+        </GroupTitle>
+
+        {isMoveOut ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Wiederholung
+              <label htmlFor="cleaning-date" className={LABEL}>
+                Reinigungsdatum <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="cleaning-date"
+                type="date"
+                required
+                value={form.cleaning_date ?? ""}
+                onChange={(e) => updateField("cleaning_date", e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                className={FIELD}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>Abgabetermin (optional)</label>
+              <input
+                type="date"
+                value={form.handover_date ?? ""}
+                onChange={(e) => updateField("handover_date", e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                className={FIELD}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>Abgabezeit (optional)</label>
+              <input
+                type="time"
+                value={form.handover_time ?? ""}
+                onChange={(e) => updateField("handover_time", e.target.value)}
+                className={FIELD}
+              />
+              <p className={HINT}>
+                Optional – falls die Uhrzeit der Wohnungsabgabe bereits bekannt ist.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className={LABEL}>
+                Objektart {REQUIRED_MARK}
               </label>
               <select
-                value={form.recurrence ?? ""}
-                onChange={(e) => updateField("recurrence", e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                required
+                value={form.object_type ?? ""}
+                onChange={(e) => updateField("object_type", e.target.value)}
+                className={FIELD}
               >
                 <option value="">Bitte wählen</option>
-                {RECURRENCE_OPTIONS.map((o) => (
+                {objectOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
                 ))}
               </select>
             </div>
-          )}
-        </div>
-      )}
+            <div>
+              <label htmlFor="cleaning-date" className={LABEL}>
+                Gewünschter Termin <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="cleaning-date"
+                type="date"
+                required
+                value={form.cleaning_date ?? ""}
+                onChange={(e) => updateField("cleaning_date", e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                className={FIELD}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>Wiederholung</label>
+              <select
+                required={Boolean(contractRecurrences)}
+                value={contractRecurrences ? recurrenceSelection(form) : form.recurrence ?? ""}
+                onChange={(e) => contractRecurrences ? updateInquiry(recurrencePatch(e.target.value)) : handleInquiryRecurrenceChange(e.target.value)}
+                className={FIELD}
+              >
+                <option value="">Bitte wählen</option>
+                {(contractRecurrences ?? INQUIRY_RECURRENCE_OPTIONS).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {!contractRecurrences && form.recurrence && RECURRENCE_COUNT_CONFIG[form.recurrence] && (
+              <div>
+                <label className={LABEL}>
+                  {RECURRENCE_COUNT_CONFIG[form.recurrence].label}
+                </label>
+                <select
+                  value={form.recurrence_count ?? ""}
+                  onChange={(e) =>
+                    handleRecurrenceCountChange(form.recurrence as string, e.target.value)
+                  }
+                  className={FIELD}
+                >
+                  <option value="">Bitte wählen</option>
+                  {Array.from(
+                    { length: RECURRENCE_COUNT_CONFIG[form.recurrence].max },
+                    (_, i) => i + 1
+                  ).map((n) => (
+                    <option key={n} value={n}>
+                      {RECURRENCE_COUNT_CONFIG[form.recurrence as string].optionLabel(n)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {isMoveOut ? "Bodenfläche in m² (optional)" : "Fläche in m² (optional)"}
-          </label>
-          <input
-            type="number"
-            min={1}
-            value={form.square_meters ?? ""}
-            onChange={(e) => updateField("square_meters", e.target.value)}
-            placeholder="z.B. 85"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        {isMoveOut && (
+        {(isUmzugsreinigung || isRecurringService) && (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {isUmzugsreinigung && (
+              <div>
+                <label className={LABEL}>Abgabegarantie gewünscht?</label>
+                <select
+                  value={(form.handover_guarantee_requested ?? true) ? "ja" : "nein"}
+                  onChange={(e) =>
+                    updateField("handover_guarantee_requested", e.target.value === "ja")
+                  }
+                  className={FIELD}
+                >
+                  <option value="ja">Ja</option>
+                  <option value="nein">Nein</option>
+                </select>
+              </div>
+            )}
+            {isRecurringService && (
+              <div>
+                <label className={LABEL}>Wiederholung</label>
+                <select
+                  value={form.recurrence ?? ""}
+                  onChange={(e) => updateField("recurrence", e.target.value)}
+                  className={FIELD}
+                >
+                  <option value="">Bitte wählen</option>
+                  {RECURRENCE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* ---- Angaben zum Objekt ---- */}
+      <section className={CARD}>
+        <GroupTitle icon={IconNote} title="Angaben zum Objekt">
+          Diese Angaben helfen uns, den Aufwand genauer einzuschätzen.
+        </GroupTitle>
+
+        {showFloorArea && <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Anzahl Fenster (optional)
+            <label className={LABEL}>
+              {isMoveOut ? "Bodenfläche in m² (optional)" : "Wie gross ist die Fläche in m²?"}
+              {floorAreaRequired && <> {REQUIRED_MARK}</>}
             </label>
             <input
               type="number"
-              value={form.windows_count ?? ""}
-              onChange={(e) => updateField("windows_count", e.target.value)}
-              placeholder="z.B. 8"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              min={isMoveOut ? 1 : 0}
+              step={isMoveOut ? 1 : "any"}
+              required={floorAreaRequired}
+              value={form.square_meters ?? ""}
+              onChange={(e) => updateField("square_meters", e.target.value)}
+              placeholder="z. B. 85"
+              className={FIELD}
             />
           </div>
-        )}
-      </div>
+          {isMoveOut && (
+            <div>
+              <label className={LABEL}>Anzahl Fenster (optional)</label>
+              <input
+                type="number"
+                value={form.windows_count ?? ""}
+                onChange={(e) => updateField("windows_count", e.target.value)}
+                placeholder="z. B. 8"
+                className={FIELD}
+              />
+            </div>
+          )}
+          {isMoveOut && (
+            <div>
+              <label className={LABEL}>Verschmutzungsgrad (optional)</label>
+              <select
+                value={form.dirtiness_level ?? ""}
+                onChange={(e) => updateField("dirtiness_level", e.target.value)}
+                className={FIELD}
+              >
+                <option value="">Bitte wählen</option>
+                <option value="low">Wenig schmutzig</option>
+                <option value="medium">Mittel schmutzig</option>
+                <option value="high">Sehr schmutzig</option>
+              </select>
+            </div>
+          )}
+        </div>}
 
-      {isMoveOut && (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Verschmutzungsgrad (optional)
+        {!isMoveOut && (
+          <div className={showFloorArea ? "mt-4" : ""}>
+            <InquiryPricingFields data={{ ...form, service_category: serviceCategory }} onChange={updateInquiry} />
+          </div>
+        )}
+
+        <div className="mt-4">
+          <label className={LABEL}>
+            {isMoveOut ? "Bemerkungen (optional)" : "Beschreibung / Bemerkungen (optional)"}
           </label>
-          <select
-            value={form.dirtiness_level ?? ""}
-            onChange={(e) => updateField("dirtiness_level", e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-          >
-            <option value="">Bitte wählen</option>
-            <option value="low">Wenig schmutzig</option>
-            <option value="medium">Mittel schmutzig</option>
-            <option value="high">Sehr schmutzig</option>
-          </select>
+          <textarea
+            rows={3}
+            value={form.notes ?? ""}
+            onChange={(e) => updateField("notes", e.target.value)}
+            placeholder="z. B. Besonderheiten, Zugang, Parkmöglichkeiten …"
+            className={`${FIELD} resize-none`}
+          />
+          {!isMoveOut && form.recurrence === "by_agreement" && (
+            <p className={HINT}>
+              Bitte beschreiben Sie den gewünschten Rhythmus kurz in den Bemerkungen.
+            </p>
+          )}
         </div>
-      </div>
-      )}
+      </section>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {isMoveOut ? "Bemerkungen (optional)" : "Beschreibung / Bemerkungen (optional)"}
-        </label>
-        <textarea
-          rows={3}
-          value={form.notes ?? ""}
-          onChange={(e) => updateField("notes", e.target.value)}
-          placeholder="Besonderheiten, spezielle Wünsche, Fragen..."
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-        />
-        {!isMoveOut && form.recurrence === "by_agreement" && (
-          <p className="mt-1 text-xs text-gray-500 leading-snug">
-            Bitte beschreiben Sie den gewünschten Rhythmus kurz in den Bemerkungen.
-          </p>
-        )}
-      </div>
+      {/* ---- Fotos ---- */}
+      <section className={CARD}>
+        <GroupTitle icon={IconPhoto} title="Fotos (optional)">
+          Laden Sie optional Fotos der Wohnung oder des Objekts hoch, damit wir Ihre Anfrage
+          genauer prüfen können.
+        </GroupTitle>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Fotos hochladen (optional)
-        </label>
-        <p className="text-xs text-gray-500 mb-2 leading-snug">
-          Laden Sie optional Fotos der Wohnung oder des Objekts hoch, damit wir Ihre
-          Anfrage genauer prüfen können.
-        </p>
         <input
           type="file"
           multiple
           accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
           onChange={handleFilesSelected}
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-3 file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold file:text-xs file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+          aria-label="Fotos hochladen (optional)"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-[13px] text-slate-600 transition-colors duration-200 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 file:mr-3 file:border-0 file:bg-slate-100 file:text-ink file:font-medium file:text-[12.5px] file:px-3 file:py-1.5 file:rounded-md file:cursor-pointer"
         />
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-2 text-[12px] text-slate-500">
           Max. 10 Dateien, je max. 10 MB. JPG, PNG, WEBP oder PDF.
         </p>
         {uploadFiles.length > 0 && (
-          <ul className="mt-2 space-y-1">
+          <ul className="mt-3 space-y-2">
             {uploadFiles.map((file, index) => (
               <li
-                key={`${file.name}-${index}`}
-                className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5"
+                key={`${file.upload_id}-${index}`}
+                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2 text-[12.5px] text-slate-600"
               >
-                <span className="flex-1 truncate">{file.name}</span>
-                <span className="text-gray-400 whitespace-nowrap">
-                  {formatFileSizeMb(file.size)}
+                <span className="flex-1 truncate">{file.file.name}</span>
+                <span className="text-slate-400 whitespace-nowrap tabular-nums">
+                  {formatFileSizeMb(file.file.size)}
                 </span>
                 <button
                   type="button"
                   onClick={() => removeUploadFile(index)}
                   disabled={submitting}
-                  aria-label={`${file.name} entfernen`}
-                  className="text-gray-400 hover:text-red-500 disabled:opacity-50 font-semibold px-1"
+                  aria-label={`${file.file.name} entfernen`}
+                  className="text-slate-400 hover:text-ink disabled:opacity-50 px-1 rounded transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40"
                 >
                   ✕
                 </button>
@@ -744,77 +761,83 @@ export default function LeadForm({
             ))}
           </ul>
         )}
-        {uploadError && <p className="mt-1 text-xs text-red-600">{uploadError}</p>}
-      </div>
+        {uploadError && <p className="mt-2 text-[13px] text-red-600">{uploadError}</p>}
+      </section>
 
+      {/* ---- Rabattcode (move-out only) ---- */}
       {isMoveOut && (
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Rabattcode (optional)
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={discountCode}
-            onChange={(e) => {
-              setDiscountCode(e.target.value);
-              setDiscount(null);
-              setDiscountError(null);
-            }}
-            placeholder="z.B. SOMMER10"
-            className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            onClick={applyDiscount}
-            disabled={discountChecking || !discountCode.trim()}
-            className="border border-gray-200 text-gray-700 hover:text-blue-600 disabled:opacity-50 font-semibold px-5 rounded-xl transition-colors whitespace-nowrap"
-          >
-            {discountChecking ? "Prüfen..." : "Anwenden"}
-          </button>
-        </div>
-        {discount ? (
-          <p className="mt-1 text-xs text-green-600">
-            Rabatt {discount.code} (−{discount.label}) angewendet.
-          </p>
-        ) : discountError ? (
-          <p className="mt-1 text-xs text-red-600">{discountError}</p>
-        ) : null}
-      </div>
+        <section className={CARD}>
+          <GroupTitle icon={IconTag} title="Rabattcode (optional)">
+            Falls Sie einen Code erhalten haben, lösen Sie ihn hier ein.
+          </GroupTitle>
+
+          <div className="flex gap-2.5">
+            <input
+              type="text"
+              value={discountCode}
+              onChange={(e) => {
+                setDiscountCode(e.target.value);
+                setDiscount(null);
+                setDiscountError(null);
+              }}
+              placeholder="z. B. SOMMER10"
+              aria-label="Rabattcode"
+              className={`${FIELD} flex-1`}
+            />
+            <button
+              type="button"
+              onClick={applyDiscount}
+              disabled={discountChecking || !discountCode.trim()}
+              className="min-h-[46px] rounded-lg border border-slate-200 bg-white px-5 text-[14px] font-medium text-ink transition-colors duration-200 hover:border-teal-500 hover:text-teal-700 disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:text-ink whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40"
+            >
+              {discountChecking ? "Prüfen..." : "Anwenden"}
+            </button>
+          </div>
+          {discount ? (
+            <p className="mt-2 text-[12.5px] text-teal-700">
+              Rabatt {discount.code} (−{discount.label}) angewendet.
+            </p>
+          ) : discountError ? (
+            <p className="mt-2 text-[12.5px] text-red-600">{discountError}</p>
+          ) : null}
+        </section>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-[13.5px] text-red-700 leading-relaxed">
           {error}
-        </div>
+        </p>
       )}
 
-      <div className="flex gap-3">
-        {onBack && (
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
+        {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="flex-1 border border-gray-200 text-gray-600 hover:text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors"
+            className="inline-flex items-center gap-2 h-[52px] px-4 rounded-lg text-[14.5px] text-slate-500 transition-colors duration-200 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40"
           >
+            <IconArrowLeft className="w-4 h-4" />
             Zurück
           </button>
+        ) : (
+          <span />
         )}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="flex-grow bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
-        >
-          {uploadingPhotos
-            ? "Fotos werden hochgeladen..."
-            : submitting
-              ? "Wird gesendet..."
-              : "Kostenlose Anfrage absenden"}
-        </button>
-      </div>
 
-      <p className="text-xs text-gray-400 text-center">
-        Keine Vorauszahlung. Unverbindlich. Wir antworten innerhalb von 10 Minuten.
-      </p>
+        <div className="flex flex-col items-end gap-2">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="inline-flex items-center justify-center gap-2.5 h-[52px] px-7 rounded-lg bg-navy-900 text-white text-[15px] font-semibold transition-colors duration-200 hover:bg-ink disabled:opacity-60 disabled:hover:bg-navy-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 focus-visible:ring-offset-2"
+          >
+            {submitting ? "Wird gesendet..." : "Offerte anfragen"}
+            {!submitting && <IconArrowRight className="w-[18px] h-[18px]" />}
+          </button>
+          <p className="text-[12px] text-slate-500 text-right max-w-xs leading-snug">
+            Keine Vorauszahlung. Unverbindlich. Bei automatisch berechenbaren Anfragen erhalten
+            Sie Ihre Offerte in der Regel innerhalb von 2 Minuten.
+          </p>
+        </div>
+      </div>
     </form>
   );
 }

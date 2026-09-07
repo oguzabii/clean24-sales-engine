@@ -12,13 +12,6 @@ import {
  * (`POST /api/uploads/website-lead`). Only these references travel in the
  * lead payload — never file contents or base64.
  */
-export interface LeadAttachmentRef {
-  storage_path: string;
-  filename: string;
-  mime_type: string;
-  size_bytes: number;
-}
-
 export interface LeadFormData {
   customer_name: string;
   email: string;
@@ -71,7 +64,16 @@ export interface LeadFormData {
   /** Optional discount / Rabattcode entered by the customer. */
   discount_code?: string;
   /** References to files already uploaded to the Lead Autopilot (optional). */
-  attachments?: LeadAttachmentRef[];
+  attachments?: string[];
+  /** OS quote input fields retained by the thin-client adapter. */
+  balcony?: boolean;
+  cellar?: boolean;
+  oven_heavy?: boolean;
+  blinds?: boolean;
+  pricing_inputs?: Record<string, unknown>;
+  facility_product?: "staircase" | "facility_basis";
+  /** Canonical OS object street field; legacy `address` remains supported. */
+  street?: string;
   page_path?: string;
   utm_source?: string;
   utm_medium?: string;

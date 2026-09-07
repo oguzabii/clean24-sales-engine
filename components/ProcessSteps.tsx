@@ -7,7 +7,7 @@ const steps = [
   {
     number: "02",
     title: "Anfrage absenden",
-    desc: "Füllen Sie das Kontaktformular aus oder rufen Sie uns an unter 044 516 19 23. Wir melden uns innerhalb von 10 Minuten.",
+    desc: "Füllen Sie das Kontaktformular aus oder rufen Sie uns an unter 044 516 19 23. Bei automatisch berechenbaren Anfragen erhalten Sie Ihre Offerte in der Regel innerhalb von 2 Minuten.",
   },
   {
     number: "03",

@@ -1,69 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { createClean24OsClient, Clean24OsClientError } from "@/lib/clean24-os-client";
 import {
-  buildLeadPayload,
-  type LeadAttachmentRef,
-  type LeadFormData,
-} from "@/lib/lead-payload";
-import { isSmtpConfigured, sendMail } from "@/lib/mail/smtp";
-import {
-  buildLeadNotificationEmail,
-  buildCustomerConfirmationEmail,
-  type WebhookDeliveryStatus,
-  type CustomerEmailDeliveryStatus,
-} from "@/lib/mail/emails";
-import { COMPANY } from "@/lib/constants";
-import { MOVE_OUT_CATEGORY, resolveServiceCategory } from "@/lib/service-categories";
-import { validateDiscountCode } from "@/lib/discount-validate";
+  buildIntakeRequest,
+  buildQuoteServiceInput,
+  fingerprintServiceInput,
+  serviceVariantFor,
+  type ThinClientFormData,
+} from "@/lib/sales-engine-contract";
+import { verifyQuoteToken } from "@/lib/quote-token";
 
-// nodemailer requires the Node.js runtime (not Edge).
-export const runtime = "nodejs";
-
-// Max attachment references per lead — mirrors the Lead Autopilot upload limit.
-const MAX_ATTACHMENT_REFS = 10;
-
-/**
- * Keeps only well-formed attachment references (uploaded to the Lead Autopilot
- * beforehand; the browser sends the returned references verbatim). Anything
- * malformed is dropped — never file contents, never extra keys.
- */
-function sanitizeAttachments(value: unknown): LeadAttachmentRef[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const refs = value
-    .filter(
-      (a): a is LeadAttachmentRef =>
-        typeof a === "object" &&
-        a !== null &&
-        typeof (a as LeadAttachmentRef).storage_path === "string" &&
-        (a as LeadAttachmentRef).storage_path.trim() !== "" &&
-        typeof (a as LeadAttachmentRef).filename === "string" &&
-        typeof (a as LeadAttachmentRef).mime_type === "string" &&
-        typeof (a as LeadAttachmentRef).size_bytes === "number"
-    )
-    .slice(0, MAX_ATTACHMENT_REFS)
-    .map((a) => ({
-      storage_path: a.storage_path,
-      filename: a.filename,
-      mime_type: a.mime_type,
-      size_bytes: a.size_bytes,
-    }));
-  return refs.length > 0 ? refs : undefined;
-}
-
-/** Always required — every category needs contact + address data. */
-const REQUIRED_BASE_FIELDS: (keyof LeadFormData)[] = [
+const REQUIRED_FIELDS: (keyof ThinClientFormData)[] = [
   "customer_name",
   "email",
   "phone",
-  "address",
   "city",
   "zip",
+  "cleaning_date",
+  "quote_token",
 ];
 
-/** Additionally required for move_out_cleaning only (drive the Richtpreis). */
-const REQUIRED_MOVE_OUT_FIELDS: (keyof LeadFormData)[] = ["apartment_size", "cleaning_date"];
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+/** Die Einreichung darf so lange laufen, wie Clean24 OS für Lead und Offerte braucht. */
+export const maxDuration = 90;
 
-export async function POST(request: NextRequest) {
-  let body: Partial<LeadFormData>;
+export async function POST(request: Request) {
+  let body: Partial<ThinClientFormData>;
 
   try {
     body = await request.json();
@@ -71,170 +33,87 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ungültige Anfrage." }, { status: 400 });
   }
 
-  // Missing/unknown category → move_out_cleaning (legacy submits unchanged).
-  const category = resolveServiceCategory(
-    typeof body.service_category === "string" ? body.service_category : undefined
-  );
-  const isMoveOut = category.value === MOVE_OUT_CATEGORY;
-
-  const requiredFields = isMoveOut
-    ? [...REQUIRED_BASE_FIELDS, ...REQUIRED_MOVE_OUT_FIELDS]
-    : REQUIRED_BASE_FIELDS;
-  const missing = requiredFields.filter((f) => !body[f]);
+  const serviceCategory = body.service_category ?? "move_out_cleaning";
+  const missing = REQUIRED_FIELDS.filter((field) => !body[field]);
+  if (!missing.includes("cleaning_date") && (typeof body.cleaning_date !== "string" || !body.cleaning_date.trim())) {
+    missing.push("cleaning_date");
+  }
+  if (serviceCategory === "move_out_cleaning" && !body.apartment_size) missing.push("apartment_size");
   if (missing.length > 0) {
+    return NextResponse.json({ error: `Pflichtfelder fehlen: ${missing.join(", ")}` }, { status: 400 });
+  }
+
+  const data = {
+    ...body,
+    balcony: body.balcony ?? false,
+    cellar: body.cellar ?? false,
+    oven_heavy: body.oven_heavy ?? false,
+    blinds: body.blinds ?? false,
+    express: body.express ?? false,
+  } as ThinClientFormData;
+
+  const attachmentError = validateAttachmentIds(data.attachments);
+  if (attachmentError) {
+    return NextResponse.json({ error: attachmentError }, { status: 400 });
+  }
+
+  let token;
+  try {
+    token = verifyQuoteToken(data.quote_token ?? "");
+  } catch (error) {
+    const expired = error instanceof Error && error.message === "QUOTE_EXPIRED";
     return NextResponse.json(
-      { error: `Pflichtfelder fehlen: ${missing.join(", ")}` },
-      { status: 400 }
+      { error: expired ? "Die Offerte ist abgelaufen. Bitte berechnen Sie den Preis erneut." : "Bitte berechnen Sie den Preis erneut." },
+      { status: expired ? 410 : 400 }
     );
   }
 
-  const data = body as LeadFormData;
-
-  // ---- Discount / Rabattcode (validated server-side via Lead Autopilot) ----
-  // Invalid/unknown codes are silently ignored so the no-code flow stays
-  // identical. Manual-review categories have no Richtpreis, so codes are
-  // ignored entirely (never validated, never forwarded).
-  const submittedCode =
-    isMoveOut ? (data.discount_code ?? "").trim() : "";
-  const discount = submittedCode ? await validateDiscountCode(submittedCode) : null;
-
-  // The authoritative server payload is always recalculated from submitted
-  // service selections. Client-computed price endpoints are never accepted.
-  const payload = buildLeadPayload(
-    {
-      ...data,
-      service_category: category.value,
-      addons: data.addons ?? {},
-      express: data.express ?? false,
-      attachments: sanitizeAttachments(data.attachments),
-    },
-    discount
-  );
-
-  if (process.env.NODE_ENV === "development") {
-    console.log("[Clean24 Lead]", JSON.stringify(payload, null, 2));
+  const serviceInput = buildQuoteServiceInput(data);
+  if (
+    token.service_category !== String(serviceCategory) ||
+    token.service_variant !== serviceVariantFor(data) ||
+    token.service_input_fingerprint !== fingerprintServiceInput(serviceInput)
+  ) {
+    return NextResponse.json({ error: "Ihre Angaben haben sich geändert. Bitte berechnen Sie den Preis erneut." }, { status: 409 });
   }
 
-  // ---- 1. Lead Autopilot webhook (unchanged behavior) ----------------
-  // The webhook stays the primary, one-way delivery channel. Failures are
-  // logged and never thrown — exactly as before.
-  const webhookUrl = process.env.CLEAN24_LEAD_WEBHOOK_URL;
-  const webhookConfigured = !!webhookUrl;
-  let webhookOk = false;
-
-  if (webhookUrl) {
-    try {
-      const webhookRes = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(process.env.CLEAN24_LEAD_WEBHOOK_SECRET
-            ? { "x-webhook-secret": process.env.CLEAN24_LEAD_WEBHOOK_SECRET }
-            : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      webhookOk = webhookRes.ok;
-      if (!webhookRes.ok) {
-        console.error(
-          "[Clean24 Webhook] Non-OK response:",
-          webhookRes.status,
-          await webhookRes.text().catch(() => "")
-        );
-      }
-    } catch (err) {
-      console.error("[Clean24 Webhook] Failed to deliver lead:", err);
-    }
-  }
-
-  // Map the webhook outcome to a status the admin email can display.
-  const webhookStatus: WebhookDeliveryStatus = !webhookConfigured
-    ? "not_configured"
-    : webhookOk
-      ? "delivered"
-      : "failed";
-
-  const smtpReady = isSmtpConfigured();
-
-  // ---- 2. Customer confirmation email (additive, best-effort) --------
-  // A failure here must never break the customer flow — we only record the
-  // status so it can be surfaced in the admin notification below.
-  let customerEmailStatus: CustomerEmailDeliveryStatus;
-  if (!smtpReady) {
-    customerEmailStatus = "not_configured";
-  } else if (!payload.email) {
-    customerEmailStatus = "no_email";
-  } else {
-    try {
-      const { subject, html, text } = buildCustomerConfirmationEmail(payload);
-      await sendMail({
-        to: payload.email,
-        subject,
-        html,
-        text,
-        // Customer replies reach the internal inbox.
-        replyTo: process.env.ADMIN_NOTIFICATION_EMAIL || COMPANY.email,
-      });
-      customerEmailStatus = "sent";
-    } catch (err) {
-      customerEmailStatus = "failed";
-      console.warn(
-        "[Clean24 Lead] Customer confirmation email failed:",
-        err instanceof Error ? err.message : err
-      );
-    }
-  }
-
-  // ---- 3. Internal admin notification email (with delivery status) ---
-  // Best-effort: a failure here must not block the customer flow as long as
-  // the webhook succeeded. It reports the webhook + customer-email outcome.
-  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
-  const adminConfigured = !!adminEmail && smtpReady;
-  let adminEmailOk = false;
-
-  if (adminConfigured) {
-    try {
-      const { subject, html, text } = buildLeadNotificationEmail(payload, {
-        webhookStatus,
-        customerEmailStatus,
-      });
-      await sendMail({
-        to: adminEmail as string,
-        subject,
-        html,
-        text,
-        // Replies go straight to the customer when an address is present.
-        replyTo: payload.email || undefined,
-      });
-      adminEmailOk = true;
-    } catch (err) {
-      console.warn(
-        "[Clean24 Lead] Admin notification email failed:",
-        err instanceof Error ? err.message : err
-      );
-    }
-  }
-
-  // ---- 4. Decide the response ----------------------------------------
-  // Error only when both configured capture channels (webhook + admin email)
-  // failed — the lead would otherwise be silently lost. The customer
-  // confirmation email is a courtesy and never affects this decision. An
-  // unconfigured channel is not a failure (preserves the legacy webhook-only
-  // and local-dev behavior).
-  if (webhookConfigured && adminConfigured && !webhookOk && !adminEmailOk) {
+  try {
+    const intake = await createClean24OsClient().intake(buildIntakeRequest(data, token.quote_id, token.submission_id));
     return NextResponse.json(
       {
-        error:
-          "Ihre Anfrage konnte gerade nicht übermittelt werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns direkt.",
+        success: true,
+        pricing_mode: intake.pricing_mode,
+        status: intake.status,
       },
-      { status: 502 }
+      { status: intake.status === "created" ? 201 : 200 }
     );
+  } catch (error) {
+    if (error instanceof Clean24OsClientError) {
+      return NextResponse.json(
+        { error: customerSafeError(error.code), code: error.code },
+        { status: error.status >= 400 && error.status < 600 ? error.status : 502 }
+      );
+    }
+    return NextResponse.json({ error: "Anfrage konnte momentan nicht übermittelt werden." }, { status: 500 });
   }
+}
 
-  return NextResponse.json({
-    success: true,
-    estimated_price_min: payload.estimated_price_min,
-    estimated_price_max: payload.estimated_price_max,
-  });
+function validateAttachmentIds(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) return "Ungültige Dateianhänge.";
+  if (value.length > 10) return "Maximal 10 Dateien möglich.";
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return value.every((id) => typeof id === "string" && uuid.test(id))
+    ? null
+    : "Ungültige Dateianhänge.";
+}
+
+function customerSafeError(code: string): string {
+  if (code === "QUOTE_EXPIRED") return "Die Offerte ist abgelaufen. Bitte berechnen Sie den Preis erneut.";
+  if (code === "QUOTE_INPUT_MISMATCH") return "Ihre Angaben haben sich geändert. Bitte berechnen Sie den Preis erneut.";
+  if (code === "QUOTE_NOT_FOUND") return "Bitte berechnen Sie den Preis erneut.";
+  if (code === "OS_UNAVAILABLE" || code === "OS_TIMEOUT") {
+    return "Anfrage konnte momentan nicht übermittelt werden. Bitte versuchen Sie es erneut.";
+  }
+  return "Anfrage konnte momentan nicht übermittelt werden.";
 }

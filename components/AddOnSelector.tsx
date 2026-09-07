@@ -1,4 +1,5 @@
 import { ADDONS } from "@/lib/constants";
+import { ADDON_ICONS, IconCheck, IconSparkle } from "./icons";
 
 interface AddOnSelectorProps {
   values: Record<string, boolean>;
@@ -6,51 +7,64 @@ interface AddOnSelectorProps {
 }
 
 /**
- * Add-on selection step.
+ * Add-on selection rows.
  *
- * Per-add-on CHF prices are intentionally NOT shown on the selection cards —
- * the fixed surcharges (lib/constants.ts) still apply via lib/pricing.ts, and
- * the customer sees the effect only in the Richtpreis range / summary.
+ * Per-add-on CHF prices are intentionally NOT shown. The fixed surcharges
+ * (lib/constants.ts) still apply via lib/pricing.ts — the customer sees their
+ * effect only in the live Richtpreis range and the selection summary.
  */
 export default function AddOnSelector({ values, onChange }: AddOnSelectorProps) {
   return (
-    <div className="space-y-3">
+    <ul className="mt-5 space-y-2.5">
       {ADDONS.map((addon) => {
         const active = !!values[addon.key];
-        const trailingLabel = "Optional";
+        const Icon = ADDON_ICONS[addon.key] ?? IconSparkle;
         return (
-          <label
-            key={addon.key}
-            className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-              active
-                ? "border-blue-600 bg-blue-50"
-                : "border-gray-200 hover:border-blue-300"
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={active}
-              onChange={(e) => onChange(addon.key, e.target.checked)}
-              className="w-5 h-5 rounded text-blue-600 flex-shrink-0 mt-0.5"
-            />
-            <div className="flex-1 min-w-0">
-              <div className={`font-medium text-sm ${active ? "text-blue-700" : "text-gray-900"}`}>
-                {addon.label}
-              </div>
-              <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                {addon.description}
-              </div>
-            </div>
-            <div
-              className={`text-[11px] uppercase tracking-wider font-semibold flex-shrink-0 whitespace-nowrap ${
-                active ? "text-blue-600" : "text-gray-400"
+          <li key={addon.key}>
+            <label
+              className={`flex items-center gap-3.5 rounded-xl border p-3.5 cursor-pointer transition-all duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-500/40 ${
+                active
+                  ? "border-teal-500 bg-teal-50/50 ring-1 ring-teal-500/30"
+                  : "border-slate-200 bg-white hover:border-teal-400"
               }`}
             >
-              {active ? "Berücksichtigt" : trailingLabel}
-            </div>
-          </label>
+              <span
+                className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg transition-colors duration-200 ${
+                  active ? "bg-white text-teal-600" : "bg-slate-50 text-slate-500"
+                }`}
+              >
+                <Icon className="w-[18px] h-[18px]" />
+              </span>
+
+              <span className="flex-1 min-w-0">
+                <span className="block text-[14px] font-semibold text-ink leading-snug">
+                  {addon.label}
+                </span>
+                <span className="block text-[12px] text-slate-500 mt-0.5 leading-snug">
+                  {addon.description}
+                </span>
+              </span>
+
+              <input
+                type="checkbox"
+                checked={active}
+                onChange={(e) => onChange(addon.key, e.target.checked)}
+                className="sr-only peer"
+              />
+              <span
+                aria-hidden
+                className={`flex-shrink-0 flex items-center justify-center w-[22px] h-[22px] rounded-md border transition-colors duration-200 ${
+                  active
+                    ? "bg-teal-500 border-teal-500 text-white"
+                    : "bg-white border-slate-300 text-transparent"
+                }`}
+              >
+                <IconCheck className="w-3.5 h-3.5" />
+              </span>
+            </label>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
