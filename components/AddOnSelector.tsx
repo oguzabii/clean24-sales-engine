@@ -9,9 +9,9 @@ interface AddOnSelectorProps {
 /**
  * Add-on selection rows.
  *
- * The surcharge shown on each row is read straight from `ADDONS` in
- * lib/constants.ts — the same source lib/pricing.ts uses. Nothing is
- * calculated or hardcoded here.
+ * Per-add-on CHF prices are intentionally NOT shown. The fixed surcharges
+ * (lib/constants.ts) still apply via lib/pricing.ts — the customer sees their
+ * effect only in the live Richtpreis range and the selection summary.
  */
 export default function AddOnSelector({ values, onChange }: AddOnSelectorProps) {
   return (
@@ -43,10 +43,6 @@ export default function AddOnSelector({ values, onChange }: AddOnSelectorProps) 
                 <span className="block text-[12px] text-slate-500 mt-0.5 leading-snug">
                   {addon.description}
                 </span>
-              </span>
-
-              <span className="flex-shrink-0 text-[13px] font-medium text-slate-600 tabular-nums whitespace-nowrap">
-                + CHF {addon.price}
               </span>
 
               <input
