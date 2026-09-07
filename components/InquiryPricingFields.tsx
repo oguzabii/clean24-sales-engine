@@ -4,14 +4,14 @@ import { useId } from "react";
 import type { LeadFormData } from "@/lib/lead-payload";
 import { inquiryFields, SPECIAL_SUBTYPES, WINDOW_GROUP_FIELDS, type InquiryField } from "@/lib/inquiry-fields";
 
-const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-const labelClass = "block text-sm font-medium text-gray-700 mb-1";
+const inputClass = "w-full min-h-[46px] rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-[14.5px] text-ink placeholder:text-slate-400 transition-colors duration-200 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20";
+const labelClass = "block text-[13px] text-slate-600 mb-1.5";
 
 function Field({ field, value, onChange }: { field: InquiryField; value: unknown; onChange: (value: unknown) => void }) {
   const id = useId();
   if (field.kind === "checkbox") return (
-    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-      <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
+    <label className="flex items-center gap-2.5 text-[14px] text-slate-600 cursor-pointer">
+      <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} className="w-[18px] h-[18px] rounded-sm border-slate-300 accent-teal-600" />
       <span>{field.label}</span>
     </label>
   );
@@ -19,8 +19,8 @@ function Field({ field, value, onChange }: { field: InquiryField; value: unknown
     <fieldset className="space-y-4">
       <legend className={labelClass}>{field.label}</legend>
       {field.options?.map((option) => (
-        <label key={option.value} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-          <input type="checkbox" className="w-4 h-4 rounded text-blue-600"
+        <label key={option.value} className="flex items-center gap-2.5 text-[14px] text-slate-600 cursor-pointer">
+          <input type="checkbox" className="w-[18px] h-[18px] rounded-sm border-slate-300 accent-teal-600"
             checked={Array.isArray(value) && value.includes(option.value)}
             onChange={(e) => {
               const selected = Array.isArray(value) ? value : [];
@@ -34,11 +34,11 @@ function Field({ field, value, onChange }: { field: InquiryField; value: unknown
   return (
     <div>
       <label htmlFor={id} className={labelClass}>
-        {field.label}{field.required ? <> <span className="text-red-500">*</span></> : " (optional)"}
+        {field.label}{field.required ? <> <span className="text-teal-600">*</span></> : " (optional)"}
       </label>
       {field.kind === "select" ? (
         <select id={id} required={field.required} value={typeof value === "string" || typeof value === "number" ? value : ""}
-          onChange={(e) => onChange(e.target.value || undefined)} className={`${inputClass} bg-white`}>
+          onChange={(e) => onChange(e.target.value || undefined)} className={inputClass}>
           <option value="">{"Bitte w\u00e4hlen"}</option>
           {field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
@@ -89,13 +89,13 @@ export default function InquiryPricingFields({ data, onChange }: {
                   onChange={(value) => changeInput("groups", groups.map((g, i) => i === index ? { ...g, [field.key]: value } : g))} />)}
               </div>
               {groups.length > 1 && <button type="button" title={`Fenstergruppe ${index + 1} entfernen`}
-                aria-label={`Fenstergruppe ${index + 1} entfernen`} className="text-sm text-gray-500 hover:text-red-600"
+                aria-label={`Fenstergruppe ${index + 1} entfernen`} className="text-[13.5px] text-slate-500 hover:text-red-600 transition-colors duration-200"
                 onClick={() => changeInput("groups", groups.filter((_, i) => i !== index))}>
                 <span aria-hidden="true">&minus;</span> Entfernen
               </button>}
             </fieldset>
           ))}
-          <button type="button" className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          <button type="button" className="text-[13.5px] text-teal-700 hover:text-teal-600 font-medium transition-colors duration-200"
             onClick={() => changeInput("groups", [...groups, {}])}>
             <span aria-hidden="true">+</span> {"Fenstergruppe hinzuf\u00fcgen"}
           </button>
@@ -103,11 +103,11 @@ export default function InquiryPricingFields({ data, onChange }: {
       )}
       {main.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{renderFields(main)}</div>}
       {extras.length > 0 && <details className="space-y-4">
-        <summary className="text-sm font-medium text-gray-700 cursor-pointer">Weitere Angaben / Zusatzleistungen (optional)</summary>
+        <summary className="text-[13.5px] font-medium text-ink cursor-pointer">Weitere Angaben / Zusatzleistungen (optional)</summary>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{renderFields(extras)}</div>
       </details>}
       {(risks.length > 0 || nicotine) && <details className="space-y-4">
-        <summary className="text-sm font-medium text-gray-700 cursor-pointer">Besonderheiten (optional)</summary>
+        <summary className="text-[13.5px] font-medium text-ink cursor-pointer">Besonderheiten (optional)</summary>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {renderFields(risks)}
           {nicotine && <Field field={{ key: "very_severe_nicotine", label: "Sehr starke Nikotinbelastung", kind: "checkbox" }}

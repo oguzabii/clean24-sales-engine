@@ -12,6 +12,21 @@ import LeadForm from "./LeadForm";
 import type { CustomerQuoteResponseBody } from "@/lib/sales-engine-contract";
 import { formatRichtpreis, moveOutRichtpreis, quoteRichtpreis } from "@/lib/richtpreis";
 import type { InquiryQuoteSelection } from "@/lib/inquiry-pricing-input";
+import { SIDEBAR_COPY, introFor } from "./quote-copy";
+import {
+  CATEGORY_ICONS,
+  IconArrowLeft,
+  IconArrowRight,
+  IconBolt,
+  IconBuilding,
+  IconCheck,
+  IconChevronRight,
+  IconHome,
+  IconInfo,
+} from "./icons";
+import QuoteStepper from "./QuoteStepper";
+import QuoteSidebar from "./QuoteSidebar";
+import QuoteSummary, { type SummaryRow } from "./QuoteSummary";
 
 type Step = "category" | "size" | "addons" | "contact";
 
@@ -24,10 +39,17 @@ interface CalcState {
   express: boolean;
 }
 
-const PROPERTY_TYPES: { key: string; label: string }[] = [
-  { key: "wohnung", label: "Wohnung" },
-  { key: "haus", label: "Haus" },
+const PROPERTY_TYPES: { key: string; label: string; sub: string; icon: "home" | "building" }[] = [
+  { key: "wohnung", label: "Wohnung", sub: "Apartment, Loft, etc.", icon: "building" },
+  { key: "haus", label: "Haus", sub: "Einfamilienhaus, Reihenhaus, etc.", icon: "home" },
 ];
+
+const STEP_LABELS: Record<Step, string> = {
+  category: "Reinigung wählen",
+  size: "Details angeben",
+  addons: "Zusatzleistungen",
+  contact: "Kontakt & Termin",
+};
 
 const initialAddons: Record<string, boolean> = ADDON_KEYS.reduce((acc, k) => {
   acc[k] = false;
@@ -41,6 +63,17 @@ const INITIAL_STATE: CalcState = {
   addons: { ...initialAddons },
   express: false,
 };
+
+const BTN_PRIMARY =
+  "inline-flex items-center justify-center gap-2.5 h-[52px] px-7 rounded-lg bg-navy-900 text-white text-[15px] font-semibold transition-colors duration-200 hover:bg-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 focus-visible:ring-offset-2";
+const BTN_BACK =
+  "inline-flex items-center gap-2 h-[52px] px-4 text-[14.5px] text-slate-500 transition-colors duration-200 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 rounded-lg";
+
+/** Splits "2.5 Zimmer" into ["2.5", "Zimmer"] without altering the label. */
+function splitSizeLabel(label: string): [string, string] {
+  const m = label.match(/^(.*?)\s+(Zimmer)$/);
+  return m ? [m[1], m[2]] : [label, ""];
+}
 
 export default function PriceCalculator() {
   const [step, setStep] = useState<Step>("category");
@@ -152,284 +185,401 @@ export default function PriceCalculator() {
   // Active indicators replacing per-line CHF breakdown
   const addonsCount = Object.values(state.addons).filter(Boolean).length;
 
+  const selectedCategory = SERVICE_CATEGORIES.find((c) => c.value === state.category) ?? null;
+  const sidebarCopy = SIDEBAR_COPY[step] ?? SIDEBAR_COPY.category;
+  const isFinal = step === "contact";
+
+  /**
+   * Incomplete input is not an OS manual-review decision — these four states
+   * mirror the live engine exactly; only their presentation changed.
+   */
+  const notice =
+    state.category && !pricing
+      ? {
+          title:
+            osQuote?.pricing_mode === "manual_review"
+              ? "Individuelle Offerte"
+              : quoteError
+                ? "Richtpreis nicht verfügbar"
+                : inquiryPricingInputs
+                  ? "Richtpreis wird ermittelt"
+                  : "Angaben unvollständig",
+          body:
+            osQuote?.pricing_mode === "manual_review"
+              ? MANUAL_REVIEW_NOTICE
+              : quoteError
+                ? "Bitte versuchen Sie es nochmals."
+                : inquiryPricingInputs
+                  ? "Ihre Angaben werden geprüft."
+                  : "Für den Richtpreis fehlen noch Angaben zur Reinigung.",
+        }
+      : null;
+
+  /** Live summary rows — all read from existing wizard state. */
+  const summaryRows: SummaryRow[] = isMoveOut
+    ? [
+        {
+          label: "Objektart",
+          value: PROPERTY_TYPES.find((p) => p.key === state.property_type)?.label ?? "",
+          icon: "home",
+        },
+        {
+          label: "Wohnungsgrösse",
+          value: APARTMENT_SIZE_LABELS[state.apartment_size] ?? "",
+          icon: "window",
+        },
+        ...(step === "addons" || step === "contact"
+          ? [
+              {
+                label: "Zusatzleistungen",
+                value: addonsCount > 0 ? `${addonsCount} ausgewählt` : "Keine",
+                icon: "plus" as const,
+              },
+            ]
+          : []),
+        { label: "Express-Termin", value: state.express ? "Ja" : "Nein", icon: "bolt" },
+      ]
+    : [];
+
+  const summary = (
+    <QuoteSummary
+      categoryValue={state.category || null}
+      categoryLabel={selectedCategory?.label ?? null}
+      rows={summaryRows}
+      price={pricing ? formatRichtpreis(pricing) : undefined}
+      priceLabel={
+        pricing?.amount_basis === "monthly" ? "Monatlicher Richtpreis" : "Aktueller Richtpreis"
+      }
+      notice={notice}
+      finalStep={isFinal}
+      onEdit={() => setStep(isMoveOut ? "size" : "category")}
+    />
+  );
+
   return (
-    <div id="calculator" className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-      {/* Progress */}
-      <div className="bg-gray-50 border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm font-medium text-gray-500">
-            Schritt {stepIndex + 1} von {steps.length}
-          </span>
-        </div>
-        <div className="flex gap-2">
-          {steps.map((s, i) => (
-            <div
-              key={s}
-              className={`h-1.5 flex-1 rounded-full transition-colors ${
-                i <= stepIndex ? "bg-blue-600" : "bg-gray-200"
-              }`}
+    <div id="calculator">
+      {/* ---- Stepper ---- */}
+      <div className="mx-auto max-w-3xl px-1">
+        <QuoteStepper labels={steps.map((s) => STEP_LABELS[s])} current={stepIndex} />
+      </div>
+
+      <div
+        className={`mt-10 lg:mt-12 grid gap-8 xl:gap-10 ${
+          isFinal
+            ? "lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]"
+            : "lg:grid-cols-[260px_minmax(0,1fr)_300px] xl:grid-cols-[300px_minmax(0,1fr)_320px]"
+        }`}
+      >
+        {/* ---- Left: explanatory column (not on the final step) ---- */}
+        {!isFinal && (
+          <div className="hidden lg:block">
+            <QuoteSidebar
+              stepLabel={`Schritt ${stepIndex + 1} von ${steps.length}`}
+              copy={sidebarCopy}
             />
-          ))}
-        </div>
-      </div>
-
-      {/* Incomplete input is not an OS manual-review decision. */}
-      {state.category && !pricing && (
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5">
-          <div className="text-blue-200 text-xs uppercase tracking-wider mb-1">
-            {osQuote?.pricing_mode === "manual_review" ? "Individuelle Offerte" : quoteError ? "Richtpreis nicht verfügbar" : inquiryPricingInputs ? "Richtpreis wird ermittelt" : "Angaben unvollständig"}
-          </div>
-          <p className="text-sm text-blue-50 leading-relaxed" role="status">
-            {osQuote?.pricing_mode === "manual_review" ? MANUAL_REVIEW_NOTICE : quoteError ? "Bitte versuchen Sie es nochmals." : inquiryPricingInputs ? "Ihre Angaben werden geprüft." : "Für den Richtpreis fehlen noch Angaben zur Reinigung."}
-          </p>
-        </div>
-      )}
-
-      {/* Display guidance only. Binding prices remain in the OS offer. */}
-      {pricing && (
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5">
-        <div className="text-blue-200 text-xs uppercase tracking-wider mb-1">
-          {pricing.amount_basis === "monthly" ? "Ihr monatlicher Richtpreis (unverbindlich)" : "Ihr Richtpreis (unverbindlich)"}
-        </div>
-        <div className="text-2xl sm:text-3xl font-bold tracking-tight tabular-nums">
-          {formatRichtpreis(pricing)}
-        </div>
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-blue-100/85 mt-2">
-          {isMoveOut && <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-            {APARTMENT_SIZE_LABELS[state.apartment_size]}
-          </span>}
-          {isMoveOut && state.property_type === "haus" && (
-            <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-              Haus
-            </span>
-          )}
-          {isMoveOut && addonsCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-              {addonsCount} {addonsCount === 1 ? "Zusatzleistung" : "Zusatzleistungen"} berücksichtigt
-            </span>
-          )}
-          {isMoveOut && state.express && (
-            <span className="inline-flex items-center gap-1.5 bg-white/10 rounded-full px-2 py-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-              Express berücksichtigt
-            </span>
-          )}
-        </div>
-        <p className="text-xs text-blue-200/90 mt-3 leading-relaxed">
-          Richtpreis, unverbindlich. Der genaue Preis wird nach Prüfung Ihrer Angaben bestätigt.
-          Alle Preise inkl. 8.1% MwSt.
-        </p>
-      </div>
-      )}
-
-      {quoteError && (
-        <div className="bg-red-50 border border-red-100 px-6 py-3 text-sm text-red-700">{quoteError}</div>
-      )}
-
-      <div className="p-6">
-        {/* Step 0: Category */}
-        {step === "category" && (
-          <div>
-            <h3 className="font-semibold text-gray-900 text-lg mb-1">
-              Welche Reinigung benötigen Sie?
-            </h3>
-            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-              Wählen Sie die passende Kategorie aus. Bei Umzugsreinigungen erhalten Sie direkt
-              eine Richtpreis-Spanne, andere Anfragen prüfen wir individuell.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {SERVICE_CATEGORIES.map((cat) => (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => selectCategory(cat.value)}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    state.category === cat.value
-                      ? "border-blue-600 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-300"
-                  }`}
-                >
-                  <div
-                    className={`font-semibold text-sm ${
-                      state.category === cat.value ? "text-blue-700" : "text-gray-900"
-                    }`}
-                  >
-                    {cat.label}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1 leading-snug">{cat.description}</p>
-                </button>
-              ))}
-            </div>
           </div>
         )}
 
-        {/* Step 1: Size (move-out only) */}
-        {step === "size" && (
-          <div>
-            <h3 className="font-semibold text-gray-900 text-lg mb-1">
-              Wie gross ist Ihre Wohnung?
-            </h3>
-            <p className="text-xs text-gray-500 mb-4">
-              Schritt 2 von 4 · Angaben erfassen
-            </p>
+        {/* ---- Center: the active step ---- */}
+        <div className="min-w-0">
+          {/* Mobile heading (the left column is desktop-only) */}
+          {!isFinal && (
+            <div className="lg:hidden mb-6">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Schritt {stepIndex + 1} von {steps.length}
+              </p>
+              <h1 className="mt-2.5 text-[24px] sm:text-[27px] font-semibold tracking-[-0.02em] leading-[1.15] text-ink">
+                {sidebarCopy.heading}
+              </h1>
+              <p className="mt-3 text-[14.5px] leading-relaxed text-slate-600">
+                {sidebarCopy.body}
+              </p>
+            </div>
+          )}
 
-            <div className="mb-5">
-              <div className="text-sm font-medium text-gray-700 mb-2">Objektart</div>
-              <div className="grid grid-cols-2 gap-3">
-                {PROPERTY_TYPES.map((pt) => (
+          {/* Live engine error surfaced inline; wording unchanged. */}
+          {quoteError && (
+            <p className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-[13.5px] text-red-700">
+              {quoteError}
+            </p>
+          )}
+
+          {/* Step 1: category */}
+          {step === "category" && (
+            <div className="c24-step grid sm:grid-cols-2 gap-3.5">
+              {SERVICE_CATEGORIES.map((cat) => {
+                const active = state.category === cat.value;
+                const Icon = CATEGORY_ICONS[cat.value] ?? IconHome;
+                return (
                   <button
-                    key={pt.key}
+                    key={cat.value}
                     type="button"
-                    onClick={() => setPropertyType(pt.key)}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      state.property_type === pt.key
-                        ? "border-blue-600 bg-blue-50"
-                        : "border-gray-200 hover:border-blue-300"
+                    aria-pressed={active}
+                    onClick={() => selectCategory(cat.value)}
+                    className={`group relative text-left rounded-2xl border p-5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 focus-visible:ring-offset-2 ${
+                      active
+                        ? "border-teal-500 bg-teal-50/50 ring-1 ring-teal-500/30"
+                        : "border-slate-200 bg-white hover:border-teal-400 hover:shadow-[0_2px_10px_rgba(12,29,51,0.05)]"
                     }`}
                   >
-                    <div className={`font-semibold text-sm ${state.property_type === pt.key ? "text-blue-700" : "text-gray-900"}`}>
-                      {pt.label}
-                    </div>
-                    <div className={`text-[11px] mt-1 uppercase tracking-wider ${state.property_type === pt.key ? "text-blue-500" : "text-gray-400"}`}>
-                      {state.property_type === pt.key ? "Ausgewählt" : "Auswählen"}
-                    </div>
+                    {active && (
+                      <span className="absolute top-4 right-4 flex items-center justify-center w-6 h-6 rounded-full bg-teal-500 text-white">
+                        <IconCheck className="w-3.5 h-3.5" />
+                      </span>
+                    )}
+                    <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-teal-50 text-teal-600 mb-4">
+                      <Icon className="w-[22px] h-[22px]" />
+                    </span>
+                    <span className="block text-[15.5px] font-semibold text-ink leading-snug pr-6">
+                      {cat.label}
+                    </span>
+                    <span className="mt-1 flex items-end justify-between gap-3">
+                      <span className="block text-[12.5px] text-slate-500 leading-snug">
+                        {cat.description}
+                      </span>
+                      {!active && (
+                        <IconChevronRight className="w-4 h-4 flex-shrink-0 text-slate-300 group-hover:text-teal-500 transition-colors duration-200" />
+                      )}
+                    </span>
                   </button>
-                ))}
+                );
+              })}
+            </div>
+          )}
+
+          {/* Step 2: Objektart + Grösse + Express (move-out only) */}
+          {step === "size" && (
+            <div className="c24-step rounded-2xl border border-slate-200 bg-white p-5 sm:p-7">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[16px] font-semibold text-ink">Objektart</h2>
+                <IconInfo className="w-4 h-4 text-slate-300" />
               </div>
-            </div>
+              <p className="mt-1 text-[13px] text-slate-500">
+                Um welche Art von Objekt handelt es sich?
+              </p>
+              <div className="mt-4 grid sm:grid-cols-2 gap-3.5">
+                {PROPERTY_TYPES.map((pt) => {
+                  const active = state.property_type === pt.key;
+                  const Icon = pt.icon === "home" ? IconHome : IconBuilding;
+                  return (
+                    <button
+                      key={pt.key}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setPropertyType(pt.key)}
+                      className={`relative text-left rounded-xl border p-4 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 focus-visible:ring-offset-2 ${
+                        active
+                          ? "border-teal-500 bg-teal-50/50 ring-1 ring-teal-500/30"
+                          : "border-slate-200 bg-white hover:border-teal-400"
+                      }`}
+                    >
+                      {active && (
+                        <span className="absolute top-3.5 right-3.5 flex items-center justify-center w-5 h-5 rounded-full bg-teal-500 text-white">
+                          <IconCheck className="w-3 h-3" />
+                        </span>
+                      )}
+                      <Icon className="w-6 h-6 text-teal-600" />
+                      <span className="mt-3 block text-[15px] font-semibold text-ink">
+                        {pt.label}
+                      </span>
+                      <span className="block text-[12px] text-slate-500 mt-0.5 leading-snug">
+                        {pt.sub}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-              {Object.entries(APARTMENT_SIZE_LABELS).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setApartmentSize(key)}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    state.apartment_size === key
-                      ? "border-blue-600 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-300"
-                  }`}
-                >
-                  <div className={`font-semibold text-sm ${state.apartment_size === key ? "text-blue-700" : "text-gray-900"}`}>
-                    {label}
-                  </div>
-                  <div className={`text-[11px] mt-1 uppercase tracking-wider ${state.apartment_size === key ? "text-blue-500" : "text-gray-400"}`}>
-                    {state.apartment_size === key ? "Ausgewählt" : "Auswählen"}
-                  </div>
-                </button>
-              ))}
-            </div>
+              <div className="mt-8">
+                <h2 className="text-[16px] font-semibold text-ink">Wohnungsgrösse</h2>
+                <p className="mt-1 text-[13px] text-slate-500">
+                  Wie viele Zimmer hat Ihre Wohnung?
+                </p>
+                <div className="mt-4 grid grid-cols-3 gap-3">
+                  {Object.entries(APARTMENT_SIZE_LABELS).map(([key, label]) => {
+                    const active = state.apartment_size === key;
+                    const [num, unit] = splitSizeLabel(label);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        aria-pressed={active}
+                        aria-label={label}
+                        onClick={() => setApartmentSize(key)}
+                        className={`relative rounded-xl border py-3.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 focus-visible:ring-offset-2 ${
+                          active
+                            ? "border-teal-500 bg-teal-50/50 ring-1 ring-teal-500/30"
+                            : "border-slate-200 bg-white hover:border-teal-400"
+                        }`}
+                      >
+                        {active && (
+                          <span className="absolute top-2 right-2 flex items-center justify-center w-4 h-4 rounded-full bg-teal-500 text-white">
+                            <IconCheck className="w-2.5 h-2.5" />
+                          </span>
+                        )}
+                        <span className="block text-[17px] font-semibold text-ink leading-none">
+                          {num}
+                        </span>
+                        {unit && (
+                          <span className="block text-[11.5px] text-slate-500 mt-1">{unit}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <label className="mt-7 flex items-start gap-3.5 rounded-xl border border-slate-200 p-4 cursor-pointer transition-colors duration-200 hover:border-teal-400 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-500/40">
+                <span className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-teal-50 text-teal-600">
+                  <IconBolt className="w-[18px] h-[18px]" />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[14px] font-semibold text-ink">
+                    Express-Termin gewünscht (24 – 48h)
+                  </span>
+                  <span className="block text-[12.5px] text-slate-500 mt-0.5 leading-snug">
+                    Wir prüfen die schnellstmögliche Verfügbarkeit in Ihrer Region.
+                  </span>
+                </span>
                 <input
                   type="checkbox"
                   checked={state.express}
                   onChange={(e) => setExpress(e.target.checked)}
-                  className="w-4 h-4 rounded text-blue-600"
+                  className="sr-only peer"
                 />
-                <span>Express-Termin gewünscht (24–48h)</span>
+                <span
+                  aria-hidden
+                  className="mt-1 flex-shrink-0 w-11 h-6 rounded-full bg-slate-200 transition-colors duration-200 relative peer-checked:bg-teal-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-200 peer-checked:after:translate-x-5"
+                />
               </label>
+
+              <div className="mt-5 flex items-start gap-2.5 rounded-xl bg-slate-50 border border-slate-200 p-3.5">
+                <IconInfo className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                <p className="text-[12px] text-slate-500 leading-relaxed">
+                  Der angezeigte Preis ist ein Richtpreis. Der genaue Preis wird nach Prüfung
+                  Ihrer Angaben in der Offerte bestätigt.
+                </p>
+              </div>
             </div>
+          )}
 
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setStep("category")}
-                className="flex-1 border border-gray-200 text-gray-600 hover:text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors"
-              >
-                Zurück
-              </button>
-              <button
-                onClick={() => setStep("addons")}
-                className="flex-2 flex-grow bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
-              >
-                Weiter: Zusatzleistungen
-              </button>
+          {/* Step 3: add-ons */}
+          {step === "addons" && (
+            <div className="c24-step rounded-2xl border border-slate-200 bg-white p-5 sm:p-7">
+              <h2 className="text-[16px] font-semibold text-ink">
+                Wählen Sie Ihre Zusatzleistungen
+              </h2>
+              <p className="mt-1.5 text-[13px] text-slate-500 leading-relaxed">
+                Die Standardreinigung ist bereits in Ihrem Richtpreis enthalten. Wählen Sie hier
+                nur spezielle Zusatzleistungen, falls gewünscht.
+              </p>
+
+              <div className="mt-5 flex items-start gap-2.5 rounded-xl bg-slate-50 border border-slate-200 p-3.5">
+                <IconInfo className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                <p className="text-[12px] text-slate-500 leading-relaxed">
+                  <span className="font-medium text-slate-600">
+                    Die folgende Grundreinigung ist immer inklusive:
+                  </span>{" "}
+                  Alle Wohnräume, Küche inkl. Backofen, Bad, WC, Fenster innen inkl. Rahmen,
+                  Böden, Oberflächen und weitere Standardleistungen.
+                </p>
+              </div>
+
+              <AddOnSelector
+                values={state.addons}
+                onChange={(key, value) => setAddon(key, value)}
+              />
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Step 2: Add-ons */}
-        {step === "addons" && (
-          <div>
-            <h3 className="font-semibold text-gray-900 text-lg mb-1">
-              Welche Zusatzleistungen benötigen Sie?
-            </h3>
-            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-              Schritt 3 von 4 · Standardleistungen wie Küche inkl. Backofen, Bad, normale
-              Fenster/Storen, Balkon und normaler Keller sind bereits enthalten. Wählen Sie hier nur
-              besondere Zusatzleistungen.
-            </p>
-            <AddOnSelector
-              values={state.addons}
-              onChange={(key, value) => setAddon(key, value)}
-            />
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setStep("size")}
-                className="flex-1 border border-gray-200 text-gray-600 hover:text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors"
-              >
-                Zurück
-              </button>
-              <button
-                onClick={() => setStep("contact")}
-                className="flex-2 flex-grow bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
-              >
-                Weiter: Kontakt & Termin
-              </button>
+          {/* Step 4: Kontakt & Termin (move-out) */}
+          {step === "contact" && isMoveOut && (
+            <div className="c24-step">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Schritt {stepIndex + 1} von {steps.length}
+              </p>
+              <h1 className="mt-2.5 text-[24px] sm:text-[28px] font-semibold tracking-[-0.02em] leading-[1.15] text-ink">
+                Ihre Kontaktdaten &amp; Wunschtermin
+              </h1>
+              <p className="mt-2 text-[14px] text-slate-600 leading-relaxed">
+                Fast geschafft! Geben Sie uns noch einige Informationen, damit wir Ihnen die
+                Offerte zustellen können.
+              </p>
+              <div className="mt-7">
+                <LeadForm
+                  serviceCategory={state.category}
+                  prefilledData={{
+                    apartment_size: state.apartment_size,
+                    property_type: state.property_type,
+                    addons: state.addons,
+                    express: state.express,
+                  }}
+                  estimatedMin={pricing?.min}
+                  estimatedMax={pricing?.max}
+                  quoteToken={quoteToken ?? undefined}
+                  onBack={() => setStep("addons")}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Step 3: Contact / Lead Form */}
-        {step === "contact" && isMoveOut && (
-          <div>
-            <h3 className="font-semibold text-gray-900 text-lg mb-1">
-              Ihre Kontaktdaten & Wunschtermin
-            </h3>
-            <p className="text-sm text-gray-500 mb-5">
-              Schritt 4 von 4 · Anfrage absenden. Wir prüfen Ihre Angaben und melden uns mit
-              Fixpreis und Terminvorschlag.
-            </p>
-            <LeadForm
-              serviceCategory={state.category}
-              prefilledData={{
-                apartment_size: state.apartment_size,
-                property_type: state.property_type,
-                addons: state.addons,
-                express: state.express,
-              }}
-              estimatedMin={pricing?.min}
-              estimatedMax={pricing?.max}
-              quoteToken={quoteToken ?? undefined}
-              onBack={() => setStep("addons")}
-            />
-          </div>
-        )}
+          {/* Step 2 (non-move-out): inquiry details + contact */}
+          {step === "contact" && !isMoveOut && (
+            <div className="c24-step">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Schritt {stepIndex + 1} von {steps.length}
+              </p>
+              <h1 className="mt-2.5 text-[24px] sm:text-[28px] font-semibold tracking-[-0.02em] leading-[1.15] text-ink">
+                {introFor(state.category).headline}
+              </h1>
+              <p className="mt-2 text-[14px] text-slate-600 leading-relaxed">
+                {introFor(state.category).sub}
+              </p>
+              <div className="mt-7">
+                <LeadForm
+                  serviceCategory={state.category}
+                  estimatedMin={pricing?.min}
+                  estimatedMax={pricing?.max}
+                  amountBasis={pricing?.amount_basis}
+                  quoteToken={quoteToken ?? undefined}
+                  onInquiryPricingChange={updateInquiryPricing}
+                  onBack={() => setStep("category")}
+                />
+              </div>
+            </div>
+          )}
 
-        {/* Step 2 (non-move-out): inquiry details + contact */}
-        {step === "contact" && !isMoveOut && (
-          <div>
-            <h3 className="font-semibold text-gray-900 text-lg mb-1">
-              Ihre Angaben & Kontaktdaten
-            </h3>
-            <p className="text-sm text-gray-500 mb-5">
-              Schritt 2 von 2 · Anfrage absenden. Wir prüfen Ihre Angaben individuell und melden
-              uns mit einer passenden Offerte.
-            </p>
-            <LeadForm
-              serviceCategory={state.category}
-              estimatedMin={pricing?.min}
-              estimatedMax={pricing?.max}
-              amountBasis={pricing?.amount_basis}
-              quoteToken={quoteToken ?? undefined}
-              onInquiryPricingChange={updateInquiryPricing}
-              onBack={() => setStep("category")}
-            />
-          </div>
-        )}
+          {/* ---- Step navigation (the lead form carries its own submit) ---- */}
+          {step !== "contact" && (
+            <div className="mt-7 flex items-center justify-end gap-2">
+              {stepIndex > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setStep(steps[stepIndex - 1])}
+                  className={BTN_BACK}
+                >
+                  <IconArrowLeft className="w-4 h-4" />
+                  Zurück
+                </button>
+              )}
+              {step === "size" && (
+                <button type="button" onClick={() => setStep("addons")} className={BTN_PRIMARY}>
+                  Weiter zu Zusatzleistungen
+                  <IconArrowRight className="w-[18px] h-[18px]" />
+                </button>
+              )}
+              {step === "addons" && (
+                <button type="button" onClick={() => setStep("contact")} className={BTN_PRIMARY}>
+                  Weiter zu Kontakt &amp; Termin
+                  <IconArrowRight className="w-[18px] h-[18px]" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ---- Right: live summary ---- */}
+        <div className={`min-w-0 ${state.category ? "" : "hidden lg:block"}`}>{summary}</div>
       </div>
     </div>
   );
