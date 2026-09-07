@@ -1,4 +1,5 @@
 import { ADDONS } from "@/lib/constants";
+import { ADDON_ICONS, IconCheck, IconSparkle } from "./icons";
 
 interface AddOnSelectorProps {
   values: Record<string, boolean>;
@@ -6,41 +7,63 @@ interface AddOnSelectorProps {
 }
 
 /**
- * Add-on selection — hairline rows, no cards.
+ * Add-on selection rows.
  *
- * Per-add-on CHF prices are intentionally NOT shown on the rows — the fixed
- * surcharges (lib/constants.ts) still apply via lib/pricing.ts, and the
- * customer sees the effect only in the Richtpreis range / summary.
+ * The surcharge shown on each row is read straight from `ADDONS` in
+ * lib/constants.ts — the same source lib/pricing.ts uses. Nothing is
+ * calculated or hardcoded here.
  */
 export default function AddOnSelector({ values, onChange }: AddOnSelectorProps) {
   return (
-    <ul className="mt-6 border-t border-slate-200">
+    <ul className="mt-5 space-y-2.5">
       {ADDONS.map((addon) => {
         const active = !!values[addon.key];
+        const Icon = ADDON_ICONS[addon.key] ?? IconSparkle;
         return (
           <li key={addon.key}>
             <label
-              className={`flex items-start gap-3.5 py-4 border-b border-slate-200 cursor-pointer transition-colors duration-200 hover:bg-mist has-[:focus-visible]:bg-mist ${
-                active ? "bg-mist/60" : ""
+              className={`flex items-center gap-3.5 rounded-xl border p-3.5 cursor-pointer transition-all duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-500/40 ${
+                active
+                  ? "border-teal-500 bg-teal-50/50 ring-1 ring-teal-500/30"
+                  : "border-slate-200 bg-white hover:border-teal-400"
               }`}
             >
+              <span
+                className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg transition-colors duration-200 ${
+                  active ? "bg-white text-teal-600" : "bg-slate-50 text-slate-500"
+                }`}
+              >
+                <Icon className="w-[18px] h-[18px]" />
+              </span>
+
+              <span className="flex-1 min-w-0">
+                <span className="block text-[14px] font-semibold text-ink leading-snug">
+                  {addon.label}
+                </span>
+                <span className="block text-[12px] text-slate-500 mt-0.5 leading-snug">
+                  {addon.description}
+                </span>
+              </span>
+
+              <span className="flex-shrink-0 text-[13px] font-medium text-slate-600 tabular-nums whitespace-nowrap">
+                + CHF {addon.price}
+              </span>
+
               <input
                 type="checkbox"
                 checked={active}
                 onChange={(e) => onChange(addon.key, e.target.checked)}
-                className="mt-0.5 w-[18px] h-[18px] rounded-sm border-slate-300 accent-teal-600 flex-shrink-0"
+                className="sr-only peer"
               />
-              <span className="flex-1 min-w-0">
-                <span
-                  className={`block text-[15px] leading-snug ${
-                    active ? "font-medium text-ink" : "text-ink"
-                  }`}
-                >
-                  {addon.label}
-                </span>
-                <span className="block text-[13px] text-slate-500 mt-0.5 leading-relaxed">
-                  {addon.description}
-                </span>
+              <span
+                aria-hidden
+                className={`flex-shrink-0 flex items-center justify-center w-[22px] h-[22px] rounded-md border transition-colors duration-200 ${
+                  active
+                    ? "bg-teal-500 border-teal-500 text-white"
+                    : "bg-white border-slate-300 text-transparent"
+                }`}
+              >
+                <IconCheck className="w-3.5 h-3.5" />
               </span>
             </label>
           </li>

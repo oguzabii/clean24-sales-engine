@@ -5,6 +5,19 @@ import { useRouter } from "next/navigation";
 import { CITIES } from "@/lib/constants";
 import { formatPrice } from "@/lib/pricing";
 import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconCalendar,
+  IconCoins,
+  IconMail,
+  IconNote,
+  IconPhone,
+  IconPhoto,
+  IconPin,
+  IconTag,
+  IconUser,
+} from "./icons";
+import {
   INQUIRY_RECURRENCE_OPTIONS,
   MOVE_OUT_CATEGORY,
   OBJECT_TYPE_OPTIONS,
@@ -69,19 +82,39 @@ const UPLOAD_ERROR_FAILED =
 const UPLOAD_ERROR_NOT_AVAILABLE =
   "Foto-Upload ist aktuell nicht verfügbar. Bitte senden Sie die Anfrage ohne Fotos.";
 
-/* ---- Clean24 field presentation (styling only) ---- */
+/* ---- Field presentation (reference UI) ---- */
+const CARD = "rounded-2xl border border-slate-200 bg-white p-5 sm:p-6";
 const FIELD =
-  "w-full min-h-[48px] rounded-md border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-slate-400 transition-colors duration-200 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20";
-const LABEL = "block text-[13.5px] text-slate-600 mb-1.5";
+  "w-full min-h-[46px] rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-[14.5px] text-ink placeholder:text-slate-400 transition-colors duration-200 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20";
+const FIELD_WITH_ICON = FIELD + " pl-10";
+const FIELD_ICON =
+  "pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400";
+const LABEL = "block text-[13px] text-slate-600 mb-1.5";
 const HINT = "mt-1.5 text-[12px] text-slate-500 leading-snug";
 const REQUIRED_MARK = <span className="text-teal-600">*</span>;
 
-/** Section marker inside the continuous form — a hairline and a quiet label. */
-function GroupTitle({ children }: { children: React.ReactNode }) {
+/** Section header inside the form: icon, title and one line of context. */
+function GroupTitle({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: (p: { className?: string }) => React.ReactElement;
+  title: string;
+  children?: React.ReactNode;
+}) {
   return (
-    <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400 pb-3 mb-5 border-b border-slate-200">
-      {children}
-    </h3>
+    <div className="flex items-start gap-3 mb-5">
+      <span className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-teal-50 text-teal-600">
+        <Icon className="w-[18px] h-[18px]" />
+      </span>
+      <span className="min-w-0">
+        <h3 className="text-[15px] font-semibold text-ink leading-snug">{title}</h3>
+        {children && (
+          <p className="text-[12.5px] text-slate-500 mt-0.5 leading-snug">{children}</p>
+        )}
+      </span>
+    </div>
   );
 }
 
@@ -375,250 +408,217 @@ export default function LeadForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-7">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {isMoveOut && estimatedMin && estimatedMax && (
-        <div className="border-t-2 border-teal-500 pt-4">
-          <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">
-            Aktueller Richtpreis
+        <div className="rounded-xl border border-teal-500/20 bg-teal-50/60 px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <IconCoins className="w-4 h-4 text-teal-600 flex-shrink-0" />
+            <span className="text-[11.5px] text-slate-600">Aktueller Richtpreis</span>
           </div>
           {discount && discount.priceMin != null && discount.priceMax != null ? (
             <>
-              <div className="mt-2 text-[30px] sm:text-[34px] font-semibold tracking-[-0.025em] text-ink tabular-nums leading-none">
+              <div className="mt-1 text-[20px] font-semibold tracking-[-0.02em] text-ink tabular-nums">
                 {formatPrice(discount.priceMin)} – {formatPrice(discount.priceMax)}
               </div>
-              <div className="mt-2 text-[13px] text-slate-500 line-through tabular-nums">
+              <div className="mt-0.5 text-[12px] text-slate-500 line-through tabular-nums">
                 {formatPrice(estimatedMin)} – {formatPrice(estimatedMax)}
               </div>
-              <span className="block text-[13px] text-teal-700 mt-1">
+              <span className="block text-[12px] text-teal-700 mt-0.5">
                 Rabatt {discount.code} (−{discount.label}) angewendet.
               </span>
             </>
           ) : (
-            <div className="mt-2 text-[30px] sm:text-[34px] font-semibold tracking-[-0.025em] text-ink tabular-nums leading-none">
+            <div className="mt-1 text-[20px] font-semibold tracking-[-0.02em] text-ink tabular-nums">
               {formatPrice(estimatedMin)} – {formatPrice(estimatedMax)}
             </div>
           )}
-          <div className="mt-2.5 text-[13px] text-slate-500">
+          <span className="block text-[11.5px] text-slate-500 mt-1">
             inkl. 8.1% MwSt. · unverbindlich · wird nach Prüfung Ihrer Angaben bestätigt
-          </div>
+          </span>
         </div>
       )}
 
-      {/* ---- 1. Objekt & Termin ---- */}
-      <section>
-        <GroupTitle>Objekt &amp; Termin</GroupTitle>
+      {/* ---- Persönliche Angaben ---- */}
+      <section className={CARD}>
+        <GroupTitle icon={IconUser} title="Persönliche Angaben">
+          Wir melden uns mit der Offerte bei Ihnen.
+        </GroupTitle>
 
-        <div className="space-y-4">
-          {isMoveOut ? (
-            <div>
-              <label htmlFor={fid("cleaning-date")} className={LABEL}>Reinigungsdatum {REQUIRED_MARK}</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor={fid("name")} className={LABEL}>
+              Name {REQUIRED_MARK}
+            </label>
+            <input
+              id={fid("name")}
+              type="text"
+              required
+              value={form.customer_name ?? ""}
+              onChange={(e) => updateField("customer_name", e.target.value)}
+              placeholder="z. B. Max Muster"
+              className={FIELD}
+            />
+          </div>
+          <div>
+            <label htmlFor={fid("phone")} className={LABEL}>
+              Telefon {REQUIRED_MARK}
+            </label>
+            <div className="relative">
+              <IconPhone className={FIELD_ICON} />
               <input
+                id={fid("phone")}
+                type="tel"
+                required
+                value={form.phone ?? ""}
+                onChange={(e) => updateField("phone", e.target.value)}
+                placeholder="z. B. 079 123 45 67"
+                className={FIELD_WITH_ICON}
+              />
+            </div>
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor={fid("email")} className={LABEL}>
+              E-Mail {REQUIRED_MARK}
+            </label>
+            <div className="relative">
+              <IconMail className={FIELD_ICON} />
+              <input
+                id={fid("email")}
+                type="email"
+                required
+                value={form.email ?? ""}
+                onChange={(e) => updateField("email", e.target.value)}
+                placeholder="z. B. name@beispiel.ch"
+                className={FIELD_WITH_ICON}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- Adresse ---- */}
+      <section className={CARD}>
+        <GroupTitle
+          icon={IconPin}
+          title={isMoveOut ? "Adresse der zu reinigenden Wohnung" : "Adresse des Objekts"}
+        >
+          Damit wir die Gegebenheiten besser einschätzen können.
+        </GroupTitle>
+
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="sm:col-span-2">
+            <label htmlFor={fid("address")} className={LABEL}>
+              Strasse {REQUIRED_MARK}
+            </label>
+            <input
+              id={fid("address")}
+              type="text"
+              required
+              value={form.address ?? ""}
+              onChange={(e) => updateField("address", e.target.value)}
+              placeholder="z. B. Bahnhofstrasse 1"
+              className={FIELD}
+            />
+          </div>
+          <div>
+            <label htmlFor={fid("zip")} className={LABEL}>
+              PLZ {REQUIRED_MARK}
+            </label>
+            <input
+              id={fid("zip")}
+              type="text"
+              required
+              value={form.zip ?? ""}
+              onChange={(e) => updateField("zip", e.target.value)}
+              placeholder="z. B. 8001"
+              maxLength={4}
+              className={FIELD}
+            />
+          </div>
+          <div>
+            <label htmlFor={fid("city")} className={LABEL}>
+              Ort {REQUIRED_MARK}
+            </label>
+            <input
+              id={fid("city")}
+              type="text"
+              required
+              list={fid("city-list")}
+              value={form.city ?? ""}
+              onChange={(e) => updateField("city", e.target.value)}
+              placeholder="z. B. Zürich"
+              className={FIELD}
+            />
+            <datalist id={fid("city-list")}>
+              {CITIES.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- Objekt & Termin ---- */}
+      <section className={CARD}>
+        <GroupTitle icon={IconCalendar} title={isMoveOut ? "Wunschtermin" : "Objekt & Termin"}>
+          {isMoveOut
+            ? "Wann soll die Reinigung stattfinden?"
+            : "Worum geht es und wann soll die Reinigung stattfinden?"}
+        </GroupTitle>
+
+        {isMoveOut ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label htmlFor={fid("cleaning-date")} className={LABEL}>
+                Gewünschtes Datum {REQUIRED_MARK}
+              </label>
+              <input
+                id={fid("cleaning-date")}
                 type="date"
                 required
                 value={form.cleaning_date ?? ""}
                 onChange={(e) => updateField("cleaning_date", e.target.value)}
                 min={new Date().toISOString().split("T")[0]}
-                id={fid("cleaning-date")}
                 className={FIELD}
               />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor={fid("object-type")} className={LABEL}>Objektart {REQUIRED_MARK}</label>
-                <select
-                  required
-                  value={form.object_type ?? ""}
-                  onChange={(e) => updateField("object_type", e.target.value)}
-                  id={fid("object-type")}
-                  className={FIELD}
-                >
-                  <option value="">Bitte wählen</option>
-                  {OBJECT_TYPE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor={fid("preferred-date")} className={LABEL}>Gewünschter Termin (optional)</label>
-                <input
-                  type="date"
-                  value={form.cleaning_date ?? ""}
-                  onChange={(e) => updateField("cleaning_date", e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
-                  id={fid("preferred-date")}
-                  className={FIELD}
-                />
-              </div>
-              <div>
-                <label htmlFor={fid("recurrence")} className={LABEL}>Wiederholung</label>
-                <select
-                  value={form.recurrence ?? ""}
-                  onChange={(e) => handleInquiryRecurrenceChange(e.target.value)}
-                  id={fid("recurrence")}
-                  className={FIELD}
-                >
-                  <option value="">Bitte wählen</option>
-                  {INQUIRY_RECURRENCE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {form.recurrence && RECURRENCE_COUNT_CONFIG[form.recurrence] && (
-                <div>
-                  <label htmlFor={fid("recurrence-count")} className={LABEL}>
-                    {RECURRENCE_COUNT_CONFIG[form.recurrence].label}
-                  </label>
-                  <select
-                    value={form.recurrence_count ?? ""}
-                    onChange={(e) =>
-                      handleRecurrenceCountChange(form.recurrence as string, e.target.value)
-                    }
-                    id={fid("recurrence-count")}
-                    className={FIELD}
-                  >
-                    <option value="">Bitte wählen</option>
-                    {Array.from(
-                      { length: RECURRENCE_COUNT_CONFIG[form.recurrence].max },
-                      (_, i) => i + 1
-                    ).map((n) => (
-                      <option key={n} value={n}>
-                        {RECURRENCE_COUNT_CONFIG[form.recurrence as string].optionLabel(n)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-          )}
-
-          {isRecurringService && (
             <div>
-              <label htmlFor={fid("recurrence-service")} className={LABEL}>Wiederholung</label>
-              <select
-                value={form.recurrence ?? ""}
-                onChange={(e) => updateField("recurrence", e.target.value)}
-                id={fid("recurrence-service")}
-                className={FIELD}
-              >
-                <option value="">Bitte wählen</option>
-                {RECURRENCE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor={fid("square-meters")} className={LABEL}>
-                {isMoveOut ? "Bodenfläche in m² (optional)" : "Fläche in m² (optional)"}
+              <label htmlFor={fid("handover-date")} className={LABEL}>
+                Abgabetermin (optional)
               </label>
               <input
-                type="number"
-                min={1}
-                value={form.square_meters ?? ""}
-                onChange={(e) => updateField("square_meters", e.target.value)}
-                placeholder="z.B. 85"
-                id={fid("square-meters")}
-                className={FIELD}
-              />
-            </div>
-            {isMoveOut && (
-              <div>
-                <label htmlFor={fid("windows-count")} className={LABEL}>Anzahl Fenster (optional)</label>
-                <input
-                  type="number"
-                  value={form.windows_count ?? ""}
-                  onChange={(e) => updateField("windows_count", e.target.value)}
-                  placeholder="z.B. 8"
-                  id={fid("windows-count")}
-                  className={FIELD}
-                />
-              </div>
-            )}
-            {isMoveOut && (
-              <div>
-                <label htmlFor={fid("dirtiness")} className={LABEL}>Verschmutzungsgrad (optional)</label>
-                <select
-                  value={form.dirtiness_level ?? ""}
-                  onChange={(e) => updateField("dirtiness_level", e.target.value)}
-                  id={fid("dirtiness")}
-                  className={FIELD}
-                >
-                  <option value="">Bitte wählen</option>
-                  <option value="low">Wenig schmutzig</option>
-                  <option value="medium">Mittel schmutzig</option>
-                  <option value="high">Sehr schmutzig</option>
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor={fid("notes")} className={LABEL}>
-              {isMoveOut ? "Bemerkungen (optional)" : "Beschreibung / Bemerkungen (optional)"}
-            </label>
-            <textarea
-              rows={3}
-              value={form.notes ?? ""}
-              onChange={(e) => updateField("notes", e.target.value)}
-              placeholder="Besonderheiten, spezielle Wünsche, Fragen..."
-              id={fid("notes")}
-              className={`${FIELD} resize-none`}
-            />
-            {!isMoveOut && form.recurrence === "by_agreement" && (
-              <p className={HINT}>
-                Bitte beschreiben Sie den gewünschten Rhythmus kurz in den Bemerkungen.
-              </p>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ---- 2. Wohnungsabgabe (move-out only) ---- */}
-      {isMoveOut && (
-        <section>
-          <GroupTitle>Wohnungsabgabe</GroupTitle>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor={fid("handover-date")} className={LABEL}>Abgabetermin (optional)</label>
-              <input
+                id={fid("handover-date")}
                 type="date"
                 value={form.handover_date ?? ""}
                 onChange={(e) => updateField("handover_date", e.target.value)}
                 min={new Date().toISOString().split("T")[0]}
-                id={fid("handover-date")}
                 className={FIELD}
               />
             </div>
             <div>
-              <label htmlFor={fid("handover-time")} className={LABEL}>Abgabezeit (optional)</label>
+              <label htmlFor={fid("handover-time")} className={LABEL}>
+                Abgabezeit (optional)
+              </label>
               <input
+                id={fid("handover-time")}
                 type="time"
                 value={form.handover_time ?? ""}
                 onChange={(e) => updateField("handover_time", e.target.value)}
-                id={fid("handover-time")}
                 className={FIELD}
               />
               <p className={HINT}>Falls die Uhrzeit der Wohnungsabgabe bereits bekannt ist.</p>
             </div>
             {isUmzugsreinigung && (
               <div>
-                <label htmlFor={fid("handover-guarantee")} className={LABEL}>Abgabegarantie gewünscht?</label>
+                <label htmlFor={fid("handover-guarantee")} className={LABEL}>
+                  Abgabegarantie gewünscht?
+                </label>
                 <select
+                  id={fid("handover-guarantee")}
                   value={(form.handover_guarantee_requested ?? true) ? "ja" : "nein"}
                   onChange={(e) =>
                     updateField("handover_guarantee_requested", e.target.value === "ja")
                   }
-                  id={fid("handover-guarantee")}
                   className={FIELD}
                 >
                   <option value="ja">Ja</option>
@@ -627,156 +627,236 @@ export default function LeadForm({
               </div>
             )}
           </div>
-        </section>
-      )}
-
-      {/* ---- 3. Kontaktdaten ---- */}
-      <section>
-        <GroupTitle>Kontaktdaten</GroupTitle>
-
-        <div className="space-y-4">
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor={fid("name")} className={LABEL}>Name {REQUIRED_MARK}</label>
-              <input
-                type="text"
+              <label htmlFor={fid("object-type")} className={LABEL}>
+                Objektart {REQUIRED_MARK}
+              </label>
+              <select
+                id={fid("object-type")}
                 required
-                value={form.customer_name ?? ""}
-                onChange={(e) => updateField("customer_name", e.target.value)}
-                placeholder="Vorname Nachname"
-                id={fid("name")}
+                value={form.object_type ?? ""}
+                onChange={(e) => updateField("object_type", e.target.value)}
                 className={FIELD}
-              />
-            </div>
-            <div>
-              <label htmlFor={fid("phone")} className={LABEL}>Telefon {REQUIRED_MARK}</label>
-              <input
-                type="tel"
-                required
-                value={form.phone ?? ""}
-                onChange={(e) => updateField("phone", e.target.value)}
-                placeholder="+41 79 000 00 00"
-                id={fid("phone")}
-                className={FIELD}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor={fid("email")} className={LABEL}>E-Mail {REQUIRED_MARK}</label>
-            <input
-              type="email"
-              required
-              value={form.email ?? ""}
-              onChange={(e) => updateField("email", e.target.value)}
-              placeholder="ihre@email.ch"
-              id={fid("email")}
-              className={FIELD}
-            />
-          </div>
-
-          <div>
-            <label htmlFor={fid("address")} className={LABEL}>Adresse / Strasse und Hausnummer {REQUIRED_MARK}</label>
-            <input
-              type="text"
-              required
-              value={form.address ?? ""}
-              onChange={(e) => updateField("address", e.target.value)}
-              placeholder="Musterstrasse 12"
-              id={fid("address")}
-              className={FIELD}
-            />
-          </div>
-
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-4">
-            <div>
-              <label htmlFor={fid("zip")} className={LABEL}>PLZ {REQUIRED_MARK}</label>
-              <input
-                type="text"
-                required
-                value={form.zip ?? ""}
-                onChange={(e) => updateField("zip", e.target.value)}
-                placeholder="8953"
-                maxLength={4}
-                id={fid("zip")}
-                className={FIELD}
-              />
-            </div>
-            <div>
-              <label htmlFor={fid("city")} className={LABEL}>Ort {REQUIRED_MARK}</label>
-              <input
-                type="text"
-                required
-                list={fid("city-list")}
-                value={form.city ?? ""}
-                onChange={(e) => updateField("city", e.target.value)}
-                placeholder="Dietikon"
-                id={fid("city")}
-                className={FIELD}
-              />
-              <datalist id={fid("city-list")}>
-                {CITIES.map((c) => (
-                  <option key={c} value={c} />
+              >
+                <option value="">Bitte wählen</option>
+                {OBJECT_TYPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ---- 4. Fotos (optional) ---- */}
-      <section>
-        <GroupTitle>Fotos (optional)</GroupTitle>
-
-        <div>
-          <p className="text-[13.5px] text-slate-600 leading-relaxed mb-3 max-w-[34rem]">
-            Fotos der Wohnung oder des Objekts helfen uns, Ihre Anfrage genauer zu prüfen.
-          </p>
-          <input
-            type="file"
-            multiple
-            accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
-            onChange={handleFilesSelected}
-            aria-label="Fotos hochladen (optional)"
-            className="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2.5 text-[13px] text-slate-600 transition-colors duration-200 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 file:mr-3 file:border-0 file:bg-mist file:text-ink file:font-medium file:text-[12.5px] file:px-3 file:py-1.5 file:rounded file:cursor-pointer"
-          />
-          <p className="mt-2 text-[12px] text-slate-500">
-            Max. 10 Dateien, je max. 10 MB. JPG, PNG, WEBP oder PDF.
-          </p>
-          {uploadFiles.length > 0 && (
-            <ul className="mt-3 border-t border-slate-200">
-              {uploadFiles.map((file, index) => (
-                <li
-                  key={`${file.name}-${index}`}
-                  className="flex items-center gap-3 text-[13px] text-slate-600 border-b border-slate-200 py-2.5"
+            <div>
+              <label htmlFor={fid("preferred-date")} className={LABEL}>
+                Gewünschter Termin (optional)
+              </label>
+              <input
+                id={fid("preferred-date")}
+                type="date"
+                value={form.cleaning_date ?? ""}
+                onChange={(e) => updateField("cleaning_date", e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                className={FIELD}
+              />
+            </div>
+            <div>
+              <label htmlFor={fid("recurrence")} className={LABEL}>
+                Wiederholung
+              </label>
+              <select
+                id={fid("recurrence")}
+                value={form.recurrence ?? ""}
+                onChange={(e) => handleInquiryRecurrenceChange(e.target.value)}
+                className={FIELD}
+              >
+                <option value="">Bitte wählen</option>
+                {INQUIRY_RECURRENCE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {form.recurrence && RECURRENCE_COUNT_CONFIG[form.recurrence] && (
+              <div>
+                <label htmlFor={fid("recurrence-count")} className={LABEL}>
+                  {RECURRENCE_COUNT_CONFIG[form.recurrence].label}
+                </label>
+                <select
+                  id={fid("recurrence-count")}
+                  value={form.recurrence_count ?? ""}
+                  onChange={(e) =>
+                    handleRecurrenceCountChange(form.recurrence as string, e.target.value)
+                  }
+                  className={FIELD}
                 >
-                  <span className="flex-1 truncate">{file.name}</span>
-                  <span className="text-slate-400 whitespace-nowrap tabular-nums">
-                    {formatFileSizeMb(file.size)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeUploadFile(index)}
-                    disabled={submitting}
-                    aria-label={`${file.name} entfernen`}
-                    className="text-slate-400 hover:text-ink disabled:opacity-50 px-1 rounded transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40"
-                  >
-                    ✕
-                  </button>
-                </li>
+                  <option value="">Bitte wählen</option>
+                  {Array.from(
+                    { length: RECURRENCE_COUNT_CONFIG[form.recurrence].max },
+                    (_, i) => i + 1
+                  ).map((n) => (
+                    <option key={n} value={n}>
+                      {RECURRENCE_COUNT_CONFIG[form.recurrence as string].optionLabel(n)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {isRecurringService && (
+          <div className="mt-4 sm:max-w-[50%]">
+            <label htmlFor={fid("recurrence-service")} className={LABEL}>
+              Wiederholung
+            </label>
+            <select
+              id={fid("recurrence-service")}
+              value={form.recurrence ?? ""}
+              onChange={(e) => updateField("recurrence", e.target.value)}
+              className={FIELD}
+            >
+              <option value="">Bitte wählen</option>
+              {RECURRENCE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
               ))}
-            </ul>
+            </select>
+          </div>
+        )}
+      </section>
+
+      {/* ---- Angaben zum Objekt (optional) ---- */}
+      <section className={CARD}>
+        <GroupTitle icon={IconNote} title="Angaben zum Objekt (optional)">
+          Diese Angaben helfen uns, den Aufwand genauer einzuschätzen.
+        </GroupTitle>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label htmlFor={fid("square-meters")} className={LABEL}>
+              {isMoveOut ? "Bodenfläche in m²" : "Fläche in m²"}
+            </label>
+            <input
+              id={fid("square-meters")}
+              type="number"
+              min={1}
+              value={form.square_meters ?? ""}
+              onChange={(e) => updateField("square_meters", e.target.value)}
+              placeholder="z. B. 85"
+              className={FIELD}
+            />
+          </div>
+          {isMoveOut && (
+            <div>
+              <label htmlFor={fid("windows-count")} className={LABEL}>
+                Anzahl Fenster
+              </label>
+              <input
+                id={fid("windows-count")}
+                type="number"
+                value={form.windows_count ?? ""}
+                onChange={(e) => updateField("windows_count", e.target.value)}
+                placeholder="z. B. 8"
+                className={FIELD}
+              />
+            </div>
           )}
-          {uploadError && <p className="mt-2 text-[13px] text-red-600">{uploadError}</p>}
+          {isMoveOut && (
+            <div>
+              <label htmlFor={fid("dirtiness")} className={LABEL}>
+                Verschmutzungsgrad
+              </label>
+              <select
+                id={fid("dirtiness")}
+                value={form.dirtiness_level ?? ""}
+                onChange={(e) => updateField("dirtiness_level", e.target.value)}
+                className={FIELD}
+              >
+                <option value="">Bitte wählen</option>
+                <option value="low">Wenig schmutzig</option>
+                <option value="medium">Mittel schmutzig</option>
+                <option value="high">Sehr schmutzig</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4">
+          <label htmlFor={fid("notes")} className={LABEL}>
+            Zusätzliche Informationen
+          </label>
+          <textarea
+            id={fid("notes")}
+            rows={3}
+            value={form.notes ?? ""}
+            onChange={(e) => updateField("notes", e.target.value)}
+            placeholder="z. B. Besonderheiten, Zugang, Parkmöglichkeiten …"
+            className={`${FIELD} resize-none`}
+          />
+          {!isMoveOut && form.recurrence === "by_agreement" && (
+            <p className={HINT}>
+              Bitte beschreiben Sie den gewünschten Rhythmus kurz in den Bemerkungen.
+            </p>
+          )}
         </div>
       </section>
 
-      {/* ---- 5. Rabattcode (move-out only) ---- */}
-      {isMoveOut && (
-        <section>
-          <GroupTitle>Rabattcode (optional)</GroupTitle>
+      {/* ---- Fotos ---- */}
+      <section className={CARD}>
+        <GroupTitle icon={IconPhoto} title="Fotos (optional)">
+          Fotos der Wohnung oder des Objekts helfen uns, Ihre Anfrage genauer zu prüfen.
+        </GroupTitle>
 
-          <div className="flex gap-2">
+        <input
+          type="file"
+          multiple
+          accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+          onChange={handleFilesSelected}
+          aria-label="Fotos hochladen (optional)"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-[13px] text-slate-600 transition-colors duration-200 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 file:mr-3 file:border-0 file:bg-slate-100 file:text-ink file:font-medium file:text-[12.5px] file:px-3 file:py-1.5 file:rounded-md file:cursor-pointer"
+        />
+        <p className="mt-2 text-[12px] text-slate-500">
+          Max. 10 Dateien, je max. 10 MB. JPG, PNG, WEBP oder PDF.
+        </p>
+        {uploadFiles.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {uploadFiles.map((file, index) => (
+              <li
+                key={`${file.name}-${index}`}
+                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2 text-[12.5px] text-slate-600"
+              >
+                <span className="flex-1 truncate">{file.name}</span>
+                <span className="text-slate-400 whitespace-nowrap tabular-nums">
+                  {formatFileSizeMb(file.size)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeUploadFile(index)}
+                  disabled={submitting}
+                  aria-label={`${file.name} entfernen`}
+                  className="text-slate-400 hover:text-ink disabled:opacity-50 px-1 rounded transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {uploadError && <p className="mt-2 text-[13px] text-red-600">{uploadError}</p>}
+      </section>
+
+      {/* ---- Rabattcode (move-out only) ---- */}
+      {isMoveOut && (
+        <section className={CARD}>
+          <GroupTitle icon={IconTag} title="Rabattcode (optional)">
+            Falls Sie einen Code erhalten haben, lösen Sie ihn hier ein.
+          </GroupTitle>
+
+          <div className="flex gap-2.5">
             <input
               type="text"
               value={discountCode}
@@ -785,7 +865,7 @@ export default function LeadForm({
                 setDiscount(null);
                 setDiscountError(null);
               }}
-              placeholder="z.B. SOMMER10"
+              placeholder="z. B. SOMMER10"
               aria-label="Rabattcode"
               className={`${FIELD} flex-1`}
             />
@@ -793,52 +873,56 @@ export default function LeadForm({
               type="button"
               onClick={applyDiscount}
               disabled={discountChecking || !discountCode.trim()}
-              className="min-h-[48px] border border-slate-300 bg-white text-ink hover:border-teal-600 hover:text-teal-700 disabled:opacity-50 disabled:hover:border-slate-300 disabled:hover:text-ink font-medium text-[14px] px-5 rounded-md transition-colors duration-200 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40"
+              className="min-h-[46px] rounded-lg border border-slate-200 bg-white px-5 text-[14px] font-medium text-ink transition-colors duration-200 hover:border-teal-500 hover:text-teal-700 disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:text-ink whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40"
             >
               {discountChecking ? "Prüfen..." : "Anwenden"}
             </button>
           </div>
           {discount ? (
-            <p className="mt-1.5 text-[12.5px] text-teal-600">
+            <p className="mt-2 text-[12.5px] text-teal-700">
               Rabatt {discount.code} (−{discount.label}) angewendet.
             </p>
           ) : discountError ? (
-            <p className="mt-1.5 text-[12.5px] text-red-600">{discountError}</p>
+            <p className="mt-2 text-[12.5px] text-red-600">{discountError}</p>
           ) : null}
         </section>
       )}
 
       {error && (
-        <p className="border-l-2 border-red-500 pl-4 text-[13.5px] text-red-700 leading-relaxed">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-[13.5px] text-red-700 leading-relaxed">
           {error}
         </p>
       )}
 
-      <div className="border-t border-slate-200 pt-7">
-        <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 h-[52px] px-4 rounded-lg text-[14.5px] text-slate-500 transition-colors duration-200 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40"
+          >
+            <IconArrowLeft className="w-4 h-4" />
+            Zurück
+          </button>
+        ) : (
+          <span />
+        )}
+
+        <div className="flex flex-col items-end gap-2">
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center justify-center h-12 px-7 rounded-md bg-navy-900 text-white text-[15px] font-medium transition-colors duration-200 hover:bg-ink disabled:opacity-60 disabled:hover:bg-navy-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40 focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center gap-2.5 h-[52px] px-7 rounded-lg bg-navy-900 text-white text-[15px] font-semibold transition-colors duration-200 hover:bg-ink disabled:opacity-60 disabled:hover:bg-navy-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 focus-visible:ring-offset-2"
           >
             {uploadingPhotos
               ? "Fotos werden hochgeladen..."
               : submitting
                 ? "Wird gesendet..."
-                : "Kostenlose Anfrage senden"}
+                : "Offerte anfragen"}
+            {!submitting && !uploadingPhotos && <IconArrowRight className="w-[18px] h-[18px]" />}
           </button>
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="text-[14px] text-slate-500 hover:text-ink transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40"
-            >
-              Zurück
-            </button>
-          )}
+          <p className="text-[12px] text-slate-500">Unverbindlich · keine Vorauszahlung</p>
         </div>
-
-        <p className="mt-4 text-[13px] text-slate-500">Unverbindlich · keine Vorauszahlung</p>
       </div>
     </form>
   );

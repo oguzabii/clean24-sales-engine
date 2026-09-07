@@ -1,15 +1,15 @@
 /**
  * Presentation-only copy for the quotation experience.
  *
- * Keyed by the EXISTING `SERVICE_CATEGORIES` values (lib/service-categories.ts).
- * This map only decides which headline is shown once a category has been
- * selected — it never influences category state, routing, pricing or the
- * payload. Adding a key here has no effect on business logic.
+ * Keyed by the EXISTING `SERVICE_CATEGORIES` values (lib/service-categories.ts)
+ * and by wizard step. Nothing here influences category state, routing,
+ * pricing or the payload — adding a key has no effect on business logic.
  */
+
+/* ---- Category-specific context shown once a category is chosen ---- */
+
 export interface CategoryIntro {
-  /** Editorial headline shown after the category is chosen. */
   headline: string;
-  /** One quiet supporting line beneath it. */
   sub: string;
 }
 
@@ -56,7 +56,6 @@ export const CATEGORY_INTRO: Record<string, CategoryIntro> = {
   },
 };
 
-/** Fallback keeps unknown/legacy categories rendering sensibly. */
 export const CATEGORY_INTRO_FALLBACK: CategoryIntro = {
   headline: "Ihre Anfrage.",
   sub: "Wir prüfen Ihre Angaben und melden uns mit einer passenden Offerte.",
@@ -65,3 +64,86 @@ export const CATEGORY_INTRO_FALLBACK: CategoryIntro = {
 export function introFor(category: string): CategoryIntro {
   return CATEGORY_INTRO[category] ?? CATEGORY_INTRO_FALLBACK;
 }
+
+/* ---- Left explanatory column, per wizard step ---- */
+
+export interface SidebarBullet {
+  icon: "check" | "clock" | "heart" | "lock" | "plus" | "eye" | "shield";
+  title: string;
+  body: string;
+}
+
+export interface SidebarCopy {
+  heading: string;
+  body: string;
+  bullets: SidebarBullet[];
+  script?: string;
+}
+
+export const SIDEBAR_COPY: Record<string, SidebarCopy> = {
+  category: {
+    heading: "Was möchten Sie reinigen lassen?",
+    body: "Wählen Sie die passende Reinigung. Den Rest führen wir Schritt für Schritt mit Ihnen durch.",
+    bullets: [
+      {
+        icon: "check",
+        title: "Kostenlos und unverbindlich",
+        body: "In wenigen Minuten zur Offerte",
+      },
+      { icon: "clock", title: "Schnell & einfach", body: "Online anfragen – wir kümmern uns" },
+      {
+        icon: "heart",
+        title: "Professionell & zuverlässig",
+        body: "Sauberkeit mit System.",
+      },
+    ],
+    script: "Vielen Dank\nfür Ihr Vertrauen!",
+  },
+  size: {
+    heading: "Erzählen Sie uns etwas über Ihr Objekt",
+    body: "Geben Sie die wichtigsten Details an, damit wir den Preis für Ihre Umzugsreinigung verlässlich einschätzen können.",
+    bullets: [
+      { icon: "clock", title: "In wenigen Minuten", body: "Einfach und schnell zum Richtpreis." },
+      { icon: "heart", title: "100% unverbindlich", body: "Sie gehen keine Verpflichtung ein." },
+      { icon: "lock", title: "Ihre Daten sind sicher", body: "Wir behandeln Ihre Angaben vertraulich." },
+    ],
+    script: "Sauber geplant.\nStressfrei umziehen!",
+  },
+  addons: {
+    heading: "Machen Sie Ihr Angebot noch individueller",
+    body: "Wählen Sie hier optionale Zusatzleistungen aus, falls diese für Ihre Umzugsreinigung relevant sind. So erhalten Sie einen noch genaueren Richtpreis.",
+    bullets: [
+      { icon: "plus", title: "Optional und flexibel", body: "Wählen Sie nur, was Sie wirklich benötigen." },
+      { icon: "eye", title: "Transparente Preise", body: "Alle Zusatzleistungen sind klar ausgewiesen." },
+      {
+        icon: "shield",
+        title: "Genauerer Richtpreis",
+        body: "Ihre Angaben helfen uns, den Preis noch präziser zu berechnen.",
+      },
+    ],
+    script: "Sauber geplant.\nStressfrei umziehen!",
+  },
+};
+
+/** Trust list shown in the right-hand summary panel. */
+export const SUMMARY_TRUST = [
+  "Abgabegarantie",
+  "Richtpreis direkt",
+  "Professionelles Team",
+  "Schweizweit im Einsatz",
+];
+
+/** Trust list for manual-review categories — no Richtpreis promise. */
+export const SUMMARY_TRUST_MANUAL = [
+  "Individuelle Offerte",
+  "Persönliche Prüfung",
+  "Professionelles Team",
+  "Schweizweit im Einsatz",
+];
+
+/** "Gut zu wissen" notes on the final step. */
+export const GOOD_TO_KNOW: { icon: "note" | "chat" | "phone"; body: string }[] = [
+  { icon: "note", body: "Ihre Anfrage ist kostenlos und unverbindlich." },
+  { icon: "chat", body: "Wir prüfen Ihre Angaben und melden uns mit einer Rückmeldung." },
+  { icon: "phone", body: "Bei Fragen sind wir jederzeit persönlich für Sie da." },
+];

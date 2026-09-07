@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Caveat } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 const geist = Geist({ subsets: ["latin"] });
+// Handwritten accent used sparingly in the quotation sidebar.
+const caveat = Caveat({ subsets: ["latin"], weight: ["600"], variable: "--font-script" });
 
 export const metadata: Metadata = {
   title: {
@@ -32,9 +34,9 @@ export default function RootLayout({
         {/* Google Ads conversion placeholder – TODO: Add conversion tag */}
         {/* Meta Pixel placeholder – TODO: Replace FB_PIXEL_ID */}
       </head>
-      <body className={`${geist.className} antialiased`}>
+      <body className={`${geist.className} ${caveat.variable} antialiased`}>
         <Header />
-        <main className="pt-16 md:pt-20">{children}</main>
+        <main className="pt-20 md:pt-24">{children}</main>
         <Footer />
       </body>
     </html>
