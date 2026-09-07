@@ -231,6 +231,15 @@ html {
   animation: c24-count-in 700ms ease-out both;
 }
 
+/* Wizard step transition — restrained, short, no decorative looping. */
+@keyframes c24-step-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.c24-step {
+  animation: c24-step-in 200ms ease-out both;
+}
+
 /* Respect user preference. */
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] {
@@ -241,7 +250,8 @@ html {
   .c24-bg-drift,
   .c24-live-dot::after,
   .c24-ticker-track,
-  .c24-count-in {
+  .c24-count-in,
+  .c24-step {
     animation: none !important;
   }
 }

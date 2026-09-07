@@ -34,7 +34,7 @@ export default function RootLayout({
       </head>
       <body className={`${geist.className} antialiased`}>
         <Header />
-        <main className="pt-16 md:pt-24">{children}</main>
+        <main className="pt-16 md:pt-20">{children}</main>
         <Footer />
       </body>
     </html>

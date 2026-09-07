@@ -1,251 +1,143 @@
-import { OfferScrollLink } from "@/components/OfferScrollLink";
-import Image from "next/image";
 import OfferStart from "@/components/OfferStart";
 import FAQ from "@/components/FAQ";
-import CTASection from "@/components/CTASection";
-import GuaranteeExplainer from "@/components/GuaranteeExplainer";
-import IncludedServices from "@/components/IncludedServices";
-import StickyMobileCTA from "@/components/StickyMobileCTA";
-import RevealOnScroll from "@/components/RevealOnScroll";
 
 type PageVariant = "umzugsreinigung" | "home";
 
+/** Three factual principles. No icons in circles, no cards. */
+const PRINCIPLES: { title: string; body: string }[] = [
+  {
+    title: "Klare Abläufe",
+    body: "Sie senden Ihre Angaben, wir prüfen sie und melden uns mit Fixpreis bzw. Offerte und Terminvorschlag zurück.",
+  },
+  {
+    title: "Persönlich erreichbar",
+    body: "Fragen zu Ihrer Anfrage klären Sie direkt mit uns – telefonisch unter 044 516 19 23 oder per E-Mail.",
+  },
+  {
+    title: "Abgabegarantie bei Umzugsreinigungen",
+    body: "Wird die Wohnung wegen unserer Reinigungsleistung nicht abgenommen, kommen wir kostenlos zurück und beheben die beanstandeten Punkte.",
+  },
+];
+
+const PROCESS = ["Anfrage", "Prüfung", "Offerte", "Reinigung"];
+
 /**
- * Copy that differs between the generalized homepage ("home": Clean24 as
- * Reinigungsservice für alle Kategorien) and the dedicated Umzugsreinigung
- * sales/SEO page ("umzugsreinigung": unchanged, conversion-specific).
- * Abgabegarantie is only ever claimed for Umzugsreinigung.
+ * FAQ focused on the objections a visitor has *before* sending an inquiry.
+ * All copy is taken unchanged from the existing FAQ catalogue.
  */
-const VARIANT_COPY = {
-  umzugsreinigung: {
-    badge: "Clean24 System · Umzugsreinigung",
-    heroLead: "Sauberkeit mit System.",
-    heroGradient: "Von Anfang an.",
-    heroTail: "",
-    heroP1:
-      "Sie geben uns die wichtigsten Angaben. Clean24 übernimmt den weiteren Ablauf.",
-    heroP2:
-      "Für Umzugsreinigungen erhalten Sie direkt einen Richtpreis. Die Abgabegarantie gilt ausschliesslich für Umzugsreinigungen.",
-    primaryCta: "Anfrage starten",
-    secondaryCta: "Richtpreis erhalten",
-    ctaMicrocopy:
-      "Wenige Angaben. Klarer nächster Schritt. Der genaue Preis wird nach Prüfung Ihrer Angaben bestätigt.",
-    cardHeading: (
-      <>
-        Ihre Wohnungsabgabe –<br />stressfrei vorbereitet.
-      </>
-    ),
-    cardBullets: [
-      { title: "Richtpreis nach Angaben", sub: "Sofort sichtbar im Online-Rechner." },
-      { title: "Abgabegarantie", sub: "Direkte Klärung reinigungsbezogener Punkte." },
-      { title: "Termin nach Verfügbarkeit", sub: "Express 24–48h auf Anfrage." },
-      { title: "Offerte nach Prüfung", sub: "Kostenlos und unverbindlich." },
-      { title: "Erreichbar per Telefon & E-Mail", sub: "044 516 19 23 · info@clean-24.ch" },
-    ],
-    cardMiniList: [
-      "Richtpreis nach Angaben",
-      "Offerte nach Prüfung",
-      "Sofortige Eingangsbestätigung",
-      "Strukturierte Rückmeldung",
-    ],
-    ctaSectionTitle: "Bereit für Ihre stressfreie Wohnungsabgabe?",
-    ctaSectionSubtitle:
-      "Starten Sie Ihre Anfrage. Clean24 übernimmt den weiteren Ablauf.",
-    ctaSectionCalculatorLabel: "Richtpreis berechnen",
+const PRE_INQUIRY_FAQ = [
+  {
+    question: "Ist der Richtpreis verbindlich?",
+    answer:
+      "Nein, der Richtpreis bei Umzugsreinigungen ist ein unverbindlicher Schätzwert basierend auf Ihren Angaben. Nach Prüfung der Details erhalten Sie von uns einen verbindlichen Fixpreis. Dieser kann leicht vom Richtpreis abweichen – in der Regel bleibt er aber im angezeigten Bereich.",
   },
-  home: {
-    badge: "Clean24 System · Reinigungsanfrage",
-    heroLead: "Ihre Reinigung.",
-    heroGradient: "Unser System.",
-    heroTail: "",
-    heroP1:
-      "Sie geben uns die wichtigsten Angaben. Clean24 übernimmt den weiteren Ablauf.",
-    heroP2:
-      "Umzugsreinigungen mit Richtpreis und Abgabegarantie. Andere Reinigungen prüfen wir individuell.",
-    primaryCta: "Anfrage starten",
-    secondaryCta: "Richtpreis erhalten",
-    ctaMicrocopy:
-      "Wenige Angaben. Klarer nächster Schritt. Der genaue Preis wird nach Prüfung Ihrer Angaben bestätigt.",
-    cardHeading: (
-      <>
-        Ihre Reinigungsanfrage –<br />strukturiert erledigt.
-      </>
-    ),
-    cardBullets: [
-      { title: "Richtpreis bei Umzugsreinigung", sub: "Sofort sichtbar im Online-Rechner." },
-      { title: "Abgabegarantie bei Umzugsreinigung", sub: "Direkte Klärung reinigungsbezogener Punkte." },
-      { title: "Individuelle Offerte", sub: "Für Privat-, Büro-, Bau- und Spezialreinigungen." },
-      { title: "Termin nach Verfügbarkeit", sub: "Express 24–48h auf Anfrage." },
-      { title: "Erreichbar per Telefon & E-Mail", sub: "044 516 19 23 · info@clean-24.ch" },
-    ],
-    cardMiniList: [
-      "Richtpreis oder individuelle Offerte",
-      "Fotos optional hochladen",
-      "Sofortige Eingangsbestätigung",
-      "Strukturierte Rückmeldung",
-    ],
-    ctaSectionTitle: "Bereit für Ihre Reinigungsanfrage?",
-    ctaSectionSubtitle:
-      "Starten Sie Ihre Anfrage. Clean24 übernimmt den weiteren Ablauf.",
-    ctaSectionCalculatorLabel: "Reinigung anfragen",
+  {
+    question: "Erhalte ich für jede Reinigung sofort einen Preis?",
+    answer:
+      "Bei Umzugsreinigungen erhalten Sie direkt eine unverbindliche Richtpreis-Spanne im Online-Rechner. Alle anderen Kategorien prüfen wir individuell – Sie senden uns Ihre Angaben, und wir melden uns mit einer passenden Offerte.",
   },
-} as const;
+  {
+    question: "Was bedeutet Abgabegarantie?",
+    answer:
+      "Die Abgabegarantie gilt für unsere Umzugsreinigungen: Wenn die Wohnung beim Abgabetermin nicht abgenommen wird und der Grund in unserer Reinigungsleistung liegt, kommen wir kostenlos zurück und beheben die beanstandeten Punkte. Ihre Kaution ist damit geschützt. Für andere Reinigungsarten gilt die Abgabegarantie nicht.",
+  },
+  {
+    question: "Wie bezahle ich?",
+    answer:
+      "Nach der Reinigung erhalten Sie eine Rechnung per E-Mail. Bezahlung per Banküberweisung oder Twint. Vorauszahlung ist nicht erforderlich.",
+  },
+  {
+    question: "Kann ich Fotos zu meiner Anfrage hochladen?",
+    answer:
+      "Ja, Sie können Ihrer Anfrage optional Fotos oder ein PDF beilegen. Das hilft uns, den Aufwand realistisch einzuschätzen. Nach Prüfung Ihrer Angaben meldet sich Clean24 mit einer strukturierten Rückmeldung bei Ihnen.",
+  },
+  {
+    question: "In welchen Gebieten sind Sie tätig?",
+    answer:
+      "Unser Einsatzgebiet umfasst Zürich Stadt, das gesamte Limmattal (Dietikon, Schlieren, Urdorf, Spreitenbach, Weiningen) und die weitere Umgebung. Bei Fragen zu Ihrem Standort erreichen Sie uns telefonisch unter 044 516 19 23 oder per E-Mail an info@clean-24.ch.",
+  },
+];
 
-function SystemSignature() {
-  const stages = ["ANFRAGE", "SYSTEM", "OFFERTE", "ENTSCHEIDUNG"];
-
-  return (
-    <div className="relative">
-      <div className="rounded-md border border-navy-100 bg-white p-5 shadow-[0_28px_80px_-58px_rgba(6,16,29,0.9)] sm:p-7">
-        <div className="mb-7 flex items-center justify-between gap-4 border-b border-navy-100 pb-5">
-          <div>
-            <div className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-teal-700">
-              Clean24 System
-            </div>
-            <div className="mt-1 text-lg font-semibold tracking-tight text-navy-950">
-              Sauberkeit mit System.
-            </div>
-          </div>
-          <div className="h-10 w-10 border border-navy-100 bg-mist" aria-hidden />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] sm:items-center">
-          {stages.map((stage, index) => (
-            <div key={stage} className="contents">
-              <div
-                className={`relative min-h-24 border p-4 ${
-                  stage === "SYSTEM"
-                    ? "border-navy-900 bg-navy-950 text-white"
-                    : "border-navy-100 bg-mist text-navy-950"
-                }`}
-              >
-                <div className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] opacity-70">
-                  {String(index + 1).padStart(2, "0")}
-                </div>
-                <div className="mt-4 text-sm font-semibold uppercase tracking-[0.12em]">
-                  {stage}
-                </div>
-                {stage === "SYSTEM" ? (
-                  <div className="absolute inset-x-4 bottom-4 h-px bg-gradient-to-r from-transparent via-teal-300 to-transparent" />
-                ) : null}
-              </div>
-              {index < stages.length - 1 ? (
-                <div className="hidden h-px w-8 bg-navy-200 sm:block" aria-hidden />
-              ) : null}
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-          <div className="h-px bg-navy-100" />
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-navy-400">
-            klar weiter
-          </span>
-          <div className="h-px bg-navy-100" />
-        </div>
-      </div>
-
-      <div className="mt-5 overflow-hidden rounded-md border border-white shadow-[0_20px_60px_-48px_rgba(6,16,29,0.8)]">
-        <Image
-          src="/clean24-editorial-cleaning.png"
-          alt="Clean24 Reinigung in einer hellen Wohnung"
-          width={1536}
-          height={864}
-          priority
-          className="aspect-[16/7] w-full object-cover"
-        />
-      </div>
-    </div>
-  );
-}
+/** One short paragraph of context, kept deliberately subordinate. */
+const CLOSING_TEXT: Record<PageVariant, string> = {
+  home: "Clean24 Memis GmbH ist eine Reinigungsfirma aus Dietikon. Wir übernehmen Umzugsreinigungen mit Abgabegarantie sowie Privat-, Büro-, Bau-, Fenster- und Spezialreinigungen in Zürich, im Limmattal und in der weiteren Umgebung.",
+  umzugsreinigung:
+    "Clean24 Memis GmbH ist eine Reinigungsfirma aus Dietikon. Wir reinigen Wohnungen vor der Abgabe nach Schweizer Standard, begleiten den Übergabetermin und klären reinigungsbezogene Punkte direkt mit Verwaltung oder Vermieter – in Zürich, im Limmattal und in der weiteren Umgebung.",
+};
 
 /**
- * Shared body of the premium Clean24 sales page.
- * Rendered by both `/` (homepage, variant "home": generalized Reinigungsservice
- * copy + service overview) and `/umzugsreinigung` (variant "umzugsreinigung":
- * the unchanged Umzugsreinigung sales page) without duplicating JSX.
+ * The public quotation experience.
+ *
+ * The quotation itself opens the page; everything below exists only to reduce
+ * purchase anxiety and is deliberately short. The marketing sections that used
+ * to sit between the visitor and the form (LiveOperations, ActivityTicker,
+ * ComparisonSection, ForWhomSection, StandardVsExtra, ChecklistLeadMagnet,
+ * GuaranteeExplainer, TrustBadges, ServiceOverview, ServiceAreaChips,
+ * IncludedServices, ProcessSteps, CTASection, StickyMobileCTA) are no longer
+ * part of this composition. Those components remain in the repository.
  */
 export default function UmzugsreinigungPageContent({
   variant = "umzugsreinigung",
 }: {
   variant?: PageVariant;
 }) {
-  const copy = VARIANT_COPY[variant];
-
   return (
     <>
-      <RevealOnScroll />
-
-      {/* ===== Clean24 System hero ===== */}
-      <section className="relative overflow-hidden bg-mist pt-18 md:pt-20">
-        <div className="absolute inset-x-0 top-0 h-40 bg-white" aria-hidden />
-        <div className="container-page relative py-10 md:py-16 lg:py-20">
-          <div className="grid gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-16">
-            <div data-reveal>
-              <div className="c24-eyebrow mb-5">
-                {copy.badge}
-              </div>
-              <h1 className="max-w-3xl text-4xl font-semibold leading-[1.02] tracking-tight text-navy-950 sm:text-5xl lg:text-[4.6rem]">
-                {copy.heroLead}
-                <br />
-                <span className="text-teal-700">{copy.heroGradient}</span>
-              </h1>
-              <div className="mt-6 max-w-2xl space-y-3 text-base leading-7 text-slate-600 sm:text-lg">
-                <p>{copy.heroP1}</p>
-                <p className="text-sm leading-6 text-slate-500 sm:text-base">{copy.heroP2}</p>
-              </div>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <OfferScrollLink href="#offer" className="c24-button-primary">
-                  {copy.primaryCta}
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </OfferScrollLink>
-                <OfferScrollLink href="#offer" className="c24-button-secondary">
-                  {copy.secondaryCta}
-                </OfferScrollLink>
-              </div>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-slate-500">
-                {copy.ctaMicrocopy}
-              </p>
-            </div>
-
-            <div data-reveal>
-              <SystemSignature />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== Entry point into the Clean24 System ===== */}
+      {/* ===== The quotation experience ===== */}
       <OfferStart />
 
-      <section className="bg-white py-14">
-        <div className="container-page">
-          <div className="mx-auto max-w-3xl border-y border-navy-100 py-8 text-center">
-            <div className="c24-eyebrow mb-3 justify-center">Clean24 System</div>
-            <p className="text-2xl font-semibold leading-tight tracking-tight text-navy-950 md:text-3xl">
-              Sie senden die Anfrage. Clean24 übernimmt den weiteren Ablauf.
-            </p>
+      {/* ===== Was Sie von Clean24 erwarten können ===== */}
+      <section className="bg-mist border-t border-slate-200">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 py-20 lg:py-28">
+          <h2 className="text-[28px] sm:text-[34px] lg:text-[40px] font-semibold tracking-[-0.025em] leading-[1.1] text-ink max-w-xl">
+            Was Sie von Clean24 erwarten können
+          </h2>
+
+          <div className="mt-12 lg:mt-16 grid gap-10 sm:gap-12 md:grid-cols-3">
+            {PRINCIPLES.map((p) => (
+              <div key={p.title} className="border-t border-slate-300 pt-5">
+                <h3 className="text-[17px] font-medium text-ink leading-snug">{p.title}</h3>
+                <p className="mt-3 text-[14.5px] text-slate-600 leading-relaxed">{p.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Compact process — a single line, not four cards. */}
+          <div className="mt-16 lg:mt-20 border-t border-slate-300 pt-5">
+            <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">
+              Ablauf
+            </div>
+            <ol className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-[15px] text-ink">
+              {PROCESS.map((label, i) => (
+                <li key={label} className="flex items-center gap-3">
+                  {i > 0 && (
+                    <span aria-hidden className="text-slate-300">
+                      →
+                    </span>
+                  )}
+                  <span>{label}</span>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </section>
 
-      <GuaranteeExplainer />
-
-      <IncludedServices />
-
-      <FAQ />
-
-      <CTASection
-        title={copy.ctaSectionTitle}
-        subtitle={copy.ctaSectionSubtitle}
-        calculatorLabel={copy.ctaSectionCalculatorLabel}
-        calculatorHref="#offer"
+      {/* ===== Compact FAQ — pre-inquiry objections only ===== */}
+      <FAQ
+        items={PRE_INQUIRY_FAQ}
+        title="Bevor Sie anfragen"
+        subtitle="Die Fragen, die vor einer Anfrage am häufigsten gestellt werden."
       />
 
-      <StickyMobileCTA />
+      {/* ===== Short closing context ===== */}
+      <section className="bg-white border-t border-slate-200">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 py-12">
+          <p className="text-[13.5px] text-slate-500 leading-relaxed max-w-3xl">
+            {CLOSING_TEXT[variant]}
+          </p>
+        </div>
+      </section>
     </>
   );
 }

@@ -6,51 +6,46 @@ interface AddOnSelectorProps {
 }
 
 /**
- * Add-on selection step.
+ * Add-on selection — hairline rows, no cards.
  *
- * Per-add-on CHF prices are intentionally NOT shown on the selection cards —
- * the fixed surcharges (lib/constants.ts) still apply via lib/pricing.ts, and
- * the customer sees the effect only in the Richtpreis range / summary.
+ * Per-add-on CHF prices are intentionally NOT shown on the rows — the fixed
+ * surcharges (lib/constants.ts) still apply via lib/pricing.ts, and the
+ * customer sees the effect only in the Richtpreis range / summary.
  */
 export default function AddOnSelector({ values, onChange }: AddOnSelectorProps) {
   return (
-    <div className="space-y-3">
+    <ul className="mt-6 border-t border-slate-200">
       {ADDONS.map((addon) => {
         const active = !!values[addon.key];
-        const trailingLabel = "Optional";
         return (
-          <label
-            key={addon.key}
-            className={`c24-choice flex cursor-pointer items-start gap-4 p-4 ${
-              active
-                ? "c24-choice-active"
-                : ""
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={active}
-              onChange={(e) => onChange(addon.key, e.target.checked)}
-              className="mt-0.5 h-5 w-5 flex-shrink-0 rounded text-[#1f9b8f]"
-            />
-            <div className="flex-1 min-w-0">
-              <div className={`text-sm font-semibold ${active ? "text-[#0f766e]" : "text-[#0b1f33]"}`}>
-                {addon.label}
-              </div>
-              <div className="mt-1 text-xs leading-relaxed text-slate-500">
-                {addon.description}
-              </div>
-            </div>
-            <div
-              className={`text-[11px] uppercase tracking-wider font-semibold flex-shrink-0 whitespace-nowrap ${
-                active ? "text-[#1f7f78]" : "text-slate-400"
+          <li key={addon.key}>
+            <label
+              className={`flex items-start gap-3.5 py-4 border-b border-slate-200 cursor-pointer transition-colors duration-200 hover:bg-mist has-[:focus-visible]:bg-mist ${
+                active ? "bg-mist/60" : ""
               }`}
             >
-              {active ? "Berücksichtigt" : trailingLabel}
-            </div>
-          </label>
+              <input
+                type="checkbox"
+                checked={active}
+                onChange={(e) => onChange(addon.key, e.target.checked)}
+                className="mt-0.5 w-[18px] h-[18px] rounded-sm border-slate-300 accent-teal-600 flex-shrink-0"
+              />
+              <span className="flex-1 min-w-0">
+                <span
+                  className={`block text-[15px] leading-snug ${
+                    active ? "font-medium text-ink" : "text-ink"
+                  }`}
+                >
+                  {addon.label}
+                </span>
+                <span className="block text-[13px] text-slate-500 mt-0.5 leading-relaxed">
+                  {addon.description}
+                </span>
+              </span>
+            </label>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }

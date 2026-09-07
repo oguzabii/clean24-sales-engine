@@ -74,40 +74,46 @@ export default function FAQ({
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
-          <p className="text-gray-500">{subtitle}</p>
-        </div>
-        <div className="space-y-3">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl border border-gray-100 overflow-hidden"
-            >
-              <button
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full flex items-center justify-between gap-4 p-5 text-left"
-              >
-                <span className="font-medium text-gray-900">{item.question}</span>
-                <svg
-                  className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform ${openIndex === index ? "rotate-180" : ""}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
+    <section className="bg-white">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 py-20 lg:py-28">
+        <div className="grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] gap-10 lg:gap-16">
+          <div>
+            <h2 className="text-[28px] sm:text-[34px] lg:text-[40px] font-semibold tracking-[-0.025em] leading-[1.1] text-ink">
+              {title}
+            </h2>
+            <p className="mt-4 text-[15px] text-slate-600 leading-relaxed max-w-sm">{subtitle}</p>
+          </div>
+
+          <div className="border-t border-slate-200">
+            {items.map((item, index) => (
+              <div key={index} className="border-b border-slate-200">
+                <button
+                  onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                  aria-expanded={openIndex === index}
+                  className="w-full flex items-start justify-between gap-6 py-5 text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {openIndex === index && (
-                <div className="px-5 pb-5 text-sm text-gray-600 leading-relaxed border-t border-gray-50 pt-4">
-                  {item.answer}
-                </div>
-              )}
-            </div>
-          ))}
+                  <span className="text-[16px] text-ink leading-snug group-hover:text-teal-700 transition-colors duration-200">
+                    {item.question}
+                  </span>
+                  <span
+                    aria-hidden
+                    className={`mt-1.5 flex-shrink-0 text-slate-400 transition-transform duration-200 ${
+                      openIndex === index ? "rotate-45" : ""
+                    }`}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" d="M8 2v12M2 8h12" />
+                    </svg>
+                  </span>
+                </button>
+                {openIndex === index && (
+                  <p className="pb-6 pr-10 text-[14.5px] text-slate-600 leading-relaxed">
+                    {item.answer}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

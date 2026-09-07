@@ -8,6 +8,7 @@ import {
   MOVE_OUT_CATEGORY,
   SERVICE_CATEGORIES,
 } from "@/lib/service-categories";
+import { introFor } from "./quote-copy";
 import AddOnSelector from "./AddOnSelector";
 import LeadForm from "./LeadForm";
 
@@ -40,19 +41,19 @@ const INITIAL_STATE: CalcState = {
   express: false,
 };
 
-const MOVE_OUT_STEP_LABELS: Record<Step, string> = {
-  category: "Leistung",
-  size: "Objekt",
-  addons: "Angaben",
-  contact: "Kontakt",
-};
+/* ---- Presentation primitives. Small radii, hairlines, no cards. ---- */
+const HEADLINE =
+  "text-[30px] sm:text-[36px] lg:text-[38px] xl:text-[42px] font-semibold tracking-[-0.025em] leading-[1.08] text-ink";
+const SUBLINE = "mt-4 text-[15.5px] sm:text-[16px] leading-relaxed text-slate-600 max-w-[34rem]";
+const EYELINE = "text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400";
 
-const MANUAL_STEP_LABELS: Record<Step, string> = {
-  category: "Leistung",
-  size: "Objekt",
-  addons: "Angaben",
-  contact: "Kontakt",
-};
+const BTN_PRIMARY =
+  "inline-flex items-center justify-center h-12 px-7 rounded-md bg-navy-900 text-white text-[15px] font-medium transition-colors duration-200 hover:bg-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40 focus-visible:ring-offset-2";
+/** Compact option control (Objektart, Grösse) — a control, not a card. */
+const OPTION_BASE =
+  "h-12 px-4 rounded-md border text-[14.5px] font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40 focus-visible:ring-offset-2";
+const OPTION_IDLE = "border-slate-300 text-ink hover:border-slate-400 hover:bg-mist";
+const OPTION_ACTIVE = "border-navy-900 bg-navy-900 text-white";
 
 export default function PriceCalculator() {
   const [step, setStep] = useState<Step>("category");
@@ -96,290 +97,228 @@ export default function PriceCalculator() {
       ? ["category", "contact"]
       : ["category", "size", "addons", "contact"];
   const stepIndex = steps.indexOf(step);
-  const stepLabels = isMoveOut ? MOVE_OUT_STEP_LABELS : MANUAL_STEP_LABELS;
 
   // Active indicators replacing per-line CHF breakdown
   const addonsCount = Object.values(state.addons).filter(Boolean).length;
 
+  const intro = introFor(state.category);
+  const summary = [
+    APARTMENT_SIZE_LABELS[state.apartment_size],
+    ...(state.property_type === "haus" ? ["Haus"] : []),
+    ...(addonsCount > 0
+      ? [`${addonsCount} ${addonsCount === 1 ? "Zusatzleistung" : "Zusatzleistungen"}`]
+      : []),
+    ...(state.express ? ["Express"] : []),
+  ].join(" · ");
+
+  /** Editorial Richtpreis — a thin teal rule and type, never a banner. */
+  const priceBlock = (
+    <div className="mt-9 border-t-2 border-teal-500 pt-4">
+      <div className={EYELINE}>Aktueller Richtpreis</div>
+      <div className="mt-2 text-[30px] sm:text-[34px] font-semibold tracking-[-0.025em] text-ink tabular-nums leading-none">
+        {pricing.display_min} – {pricing.display_max}
+      </div>
+      <div className="mt-2.5 text-[13px] text-slate-500">inkl. 8.1% MwSt. · unverbindlich</div>
+      <div className="mt-1 text-[13px] text-slate-500">{summary}</div>
+    </div>
+  );
+
   return (
-    <div id="calculator" className="overflow-hidden rounded-md border border-navy-100 bg-white shadow-[0_28px_70px_-52px_rgba(6,16,29,0.8)]">
-      {/* Progress */}
-      <div className="border-b border-navy-100 bg-mist px-5 py-5 sm:px-7">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-teal-700">
-            Clean24 System
+    <div id="calculator">
+      {/* ---- Step meta: quiet wayfinding, never a progress dashboard ---- */}
+      {stepIndex > 0 && (
+        <div className="flex items-center justify-between gap-4 mb-7">
+          <button
+            type="button"
+            onClick={() => setStep(steps[stepIndex - 1])}
+            className="text-[13.5px] text-slate-500 hover:text-ink transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40"
+          >
+            ← Zurück
+          </button>
+          <span className="text-[12px] text-slate-400 tabular-nums">
+            Schritt {stepIndex + 1} von {steps.length}
           </span>
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-navy-400">
-            Schritt {String(stepIndex + 1).padStart(2, "0")}
-          </span>
-        </div>
-        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
-          {steps.map((s, i) => (
-            <div
-              key={s}
-              className={`border-t pt-2 transition-colors ${
-                i <= stepIndex ? "border-teal-500 text-navy-950" : "border-navy-100 text-navy-300"
-              }`}
-            >
-              <div className="text-[0.62rem] font-semibold uppercase tracking-[0.14em]">
-                {String(i + 1).padStart(2, "0")} {stepLabels[s]}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Neutral notice for manual-review categories — no CHF range. */}
-      {state.category && !isMoveOut && (
-        <div className="bg-navy-950 px-5 py-5 text-white sm:px-7">
-          <div className="mb-1 text-xs uppercase tracking-wider text-teal-200">
-            Klarer nächster Schritt
-          </div>
-          <p className="text-sm leading-relaxed text-slate-100">{MANUAL_REVIEW_NOTICE}</p>
         </div>
       )}
 
-      {/* Richtpreis range — move-out only. No per-line CHF itemisation.
-          Selections still adjust the range; final price is confirmed after
-          review. */}
-      {isMoveOut && (
-      <div className="bg-navy-950 px-5 py-5 text-white sm:px-7">
-        <div className="mb-1 text-xs uppercase tracking-wider text-teal-200">
-          Ihr Richtpreis (unverbindlich)
-        </div>
-        <div className="text-2xl sm:text-3xl font-bold tracking-tight tabular-nums">
-          {pricing.display_min} – {pricing.display_max}
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-100">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-teal-200" />
-            {APARTMENT_SIZE_LABELS[state.apartment_size]}
-          </span>
-          {state.property_type === "haus" && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-teal-200" />
-              Haus
-            </span>
-          )}
-          {addonsCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-teal-200" />
-              {addonsCount} {addonsCount === 1 ? "Zusatzleistung" : "Zusatzleistungen"} berücksichtigt
-            </span>
-          )}
-          {state.express && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-teal-200" />
-              Express berücksichtigt
-            </span>
-          )}
-        </div>
-        <p className="mt-3 text-xs leading-relaxed text-slate-300">
-          Richtpreis, unverbindlich. Der genaue Preis wird nach Prüfung Ihrer Angaben bestätigt.
-          Alle Preise inkl. 8.1% MwSt.
-        </p>
-      </div>
+      {/* ---- Headline: the first useful question, then category-specific ---- */}
+      <h1 className={HEADLINE}>
+        {step === "category" ? "Was möchten Sie reinigen lassen?" : intro.headline}
+      </h1>
+
+      {step === "category" ? (
+        <>
+          <p className={SUBLINE}>
+            Wählen Sie die passende Reinigung. Den Rest führen wir Schritt für Schritt mit Ihnen
+            durch.
+          </p>
+          <p className="mt-3 text-[13.5px] text-slate-500">Kostenlos und unverbindlich.</p>
+        </>
+      ) : (
+        <p className={SUBLINE}>{intro.sub}</p>
       )}
 
-      <div className="p-5 sm:p-7">
-        {/* Step 0: Category */}
-        {step === "category" && (
-          <div>
-            <div className="c24-eyebrow mb-3">01 Leistung</div>
-            <h3 className="mb-1 text-xl font-bold text-[#0b1f33]">
-              Welche Reinigung benötigen Sie?
-            </h3>
-            <p className="mb-5 text-sm leading-relaxed text-slate-500">
-              Wählen Sie die passende Kategorie aus. Bei Umzugsreinigungen erhalten Sie direkt
-              eine Richtpreis-Spanne, andere Anfragen prüfen wir individuell.
-            </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {SERVICE_CATEGORIES.map((cat) => (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => selectCategory(cat.value)}
-                  className={`c24-choice min-h-24 p-4 text-left ${
-                    state.category === cat.value
-                      ? "c24-choice-active"
-                      : ""
-                  }`}
-                >
-                  <div
-                    className={`font-semibold text-sm ${
-                      state.category === cat.value ? "text-[#0f766e]" : "text-[#0b1f33]"
-                    }`}
-                  >
+      {/* ---- Step 0: the hook — an editorial index of services ---- */}
+      {step === "category" && (
+        <ul className="mt-9 border-t border-slate-200">
+          {SERVICE_CATEGORIES.map((cat) => (
+            <li key={cat.value}>
+              <button
+                type="button"
+                onClick={() => selectCategory(cat.value)}
+                className="group w-full text-left flex items-center gap-5 py-4 border-b border-slate-200 transition-colors duration-200 hover:bg-mist focus:outline-none focus-visible:bg-mist focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-600/40"
+              >
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[16.5px] font-medium text-ink leading-snug">
                     {cat.label}
-                  </div>
-                  <p className="mt-1 text-xs leading-snug text-slate-500">{cat.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+                    {cat.value === MOVE_OUT_CATEGORY && (
+                      <span className="ml-2.5 text-[12px] font-medium text-teal-600 whitespace-nowrap">
+                        Richtpreis direkt
+                      </span>
+                    )}
+                  </span>
+                  <span className="block text-[13px] text-slate-500 mt-1 leading-snug">
+                    {cat.description}
+                  </span>
+                </span>
+                <svg
+                  className="w-4 h-4 flex-shrink-0 text-slate-300 transition-all duration-200 group-hover:text-teal-600 group-hover:translate-x-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.75}
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
-        {/* Step 1: Size (move-out only) */}
-        {step === "size" && (
-          <div>
-            <div className="c24-eyebrow mb-3">02 Objekt</div>
-            <h3 className="mb-1 text-xl font-bold text-[#0b1f33]">
-              Wie gross ist Ihre Wohnung?
-            </h3>
-            <p className="mb-5 text-sm text-slate-500">
-              Anfrage starten · Objekt einordnen
-            </p>
-
-            <div className="mb-5">
-              <div className="text-sm font-semibold text-[#0b1f33] mb-2">Objektart</div>
-              <div className="grid grid-cols-2 gap-3">
-                {PROPERTY_TYPES.map((pt) => (
+      {/* ---- Step 1: Objekt & Grösse (move-out only) ---- */}
+      {step === "size" && (
+        <div className="c24-step">
+          <div className="mt-9">
+            <div className={EYELINE}>Objektart</div>
+            <div className="mt-3 flex gap-2.5">
+              {PROPERTY_TYPES.map((pt) => {
+                const active = state.property_type === pt.key;
+                return (
                   <button
                     key={pt.key}
                     type="button"
+                    aria-pressed={active}
                     onClick={() => setPropertyType(pt.key)}
-                    className={`c24-choice min-h-20 p-4 text-left ${
-                      state.property_type === pt.key
-                        ? "c24-choice-active"
-                        : ""
-                    }`}
+                    className={`${OPTION_BASE} ${active ? OPTION_ACTIVE : OPTION_IDLE} min-w-[7.5rem]`}
                   >
-                    <div className={`font-semibold text-sm ${state.property_type === pt.key ? "text-[#0f766e]" : "text-[#0b1f33]"}`}>
-                      {pt.label}
-                    </div>
-                    <div className={`text-[11px] mt-1 uppercase tracking-wider ${state.property_type === pt.key ? "text-[#1f7f78]" : "text-slate-400"}`}>
-                      {state.property_type === pt.key ? "Ausgewählt" : "Auswählen"}
-                    </div>
+                    {pt.label}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-              {Object.entries(APARTMENT_SIZE_LABELS).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setApartmentSize(key)}
-                  className={`c24-choice min-h-20 p-4 text-left ${
-                    state.apartment_size === key
-                      ? "c24-choice-active"
-                      : ""
-                  }`}
-                >
-                  <div className={`font-semibold text-sm ${state.apartment_size === key ? "text-[#0f766e]" : "text-[#0b1f33]"}`}>
+          <div className="mt-8">
+            <div className={EYELINE}>Grösse</div>
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {Object.entries(APARTMENT_SIZE_LABELS).map(([key, label]) => {
+                const active = state.apartment_size === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setApartmentSize(key)}
+                    className={`${OPTION_BASE} ${active ? OPTION_ACTIVE : OPTION_IDLE}`}
+                  >
                     {label}
-                  </div>
-                  <div className={`text-[11px] mt-1 uppercase tracking-wider ${state.apartment_size === key ? "text-[#1f7f78]" : "text-slate-400"}`}>
-                    {state.apartment_size === key ? "Ausgewählt" : "Auswählen"}
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-[#dbe6ea] bg-[#f7fafb] p-4 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={state.express}
-                  onChange={(e) => setExpress(e.target.checked)}
-                  className="h-5 w-5 rounded text-[#1f9b8f]"
-                />
-                <span>Express-Termin gewünscht (24–48h)</span>
-              </label>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setStep("category")}
-                className="c24-button-secondary flex-1"
-              >
-                Zurück
-              </button>
-              <button
-                onClick={() => setStep("addons")}
-                className="c24-button-primary flex-grow"
-              >
-                Weiter: Zusatzleistungen
-              </button>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        )}
 
-        {/* Step 2: Add-ons */}
-        {step === "addons" && (
-          <div>
-            <div className="c24-eyebrow mb-3">03 Angaben</div>
-            <h3 className="mb-1 text-xl font-bold text-[#0b1f33]">
-              Welche Zusatzleistungen benötigen Sie?
-            </h3>
-            <p className="mb-5 text-sm leading-relaxed text-slate-500">
-              Standardleistungen wie Küche inkl. Backofen, Bad, normale
-              Fenster/Storen, Balkon und normaler Keller sind bereits enthalten. Wählen Sie hier nur
-              besondere Zusatzleistungen.
-            </p>
-            <AddOnSelector
-              values={state.addons}
-              onChange={(key, value) => setAddon(key, value)}
+          <label className="mt-8 flex items-start gap-3.5 border-t border-slate-200 pt-5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={state.express}
+              onChange={(e) => setExpress(e.target.checked)}
+              className="mt-0.5 w-[18px] h-[18px] rounded-sm border-slate-300 accent-teal-600 flex-shrink-0"
             />
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setStep("size")}
-                className="c24-button-secondary flex-1"
-              >
-                Zurück
-              </button>
-              <button
-                onClick={() => setStep("contact")}
-                className="c24-button-primary flex-grow"
-              >
-                Weiter: Kontakt & Termin
-              </button>
-            </div>
-          </div>
-        )}
+            <span className="min-w-0">
+              <span className="block text-[14.5px] font-medium text-ink">
+                Express-Termin gewünscht
+              </span>
+              <span className="block text-[13px] text-slate-500 mt-0.5">
+                Ausführung innerhalb von 24–48 Stunden, nach Verfügbarkeit.
+              </span>
+            </span>
+          </label>
 
-        {/* Step 3: Contact / Lead Form */}
-        {step === "contact" && isMoveOut && (
-          <div>
-            <div className="c24-eyebrow mb-3">04 Kontakt</div>
-            <h3 className="mb-1 text-xl font-bold text-[#0b1f33]">
-              Ihre Kontaktdaten & Wunschtermin
-            </h3>
-            <p className="mb-5 text-sm text-slate-500">
-              Anfrage absenden. Der genaue Preis wird nach Prüfung Ihrer Angaben bestätigt.
-            </p>
-            <LeadForm
-              serviceCategory={state.category}
-              prefilledData={{
-                apartment_size: state.apartment_size,
-                property_type: state.property_type,
-                addons: state.addons,
-                express: state.express,
-              }}
-              estimatedMin={pricing.min}
-              estimatedMax={pricing.max}
-              onBack={() => setStep("addons")}
-            />
-          </div>
-        )}
+          {priceBlock}
 
-        {/* Step 2 (non-move-out): inquiry details + contact */}
-        {step === "contact" && !isMoveOut && (
-          <div>
-            <div className="c24-eyebrow mb-3">02 Kontakt</div>
-            <h3 className="mb-1 text-xl font-bold text-[#0b1f33]">
-              Ihre Angaben & Kontaktdaten
-            </h3>
-            <p className="mb-5 text-sm text-slate-500">
-              Anfrage absenden. Clean24 übernimmt den weiteren Ablauf.
-            </p>
-            <LeadForm
-              serviceCategory={state.category}
-              onBack={() => setStep("category")}
-            />
+          <div className="mt-8">
+            <button type="button" onClick={() => setStep("addons")} className={BTN_PRIMARY}>
+              Weiter
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* ---- Step 2: Zusatzleistungen ---- */}
+      {step === "addons" && (
+        <div className="c24-step">
+          <div className="mt-9">
+            <div className={EYELINE}>Zusatzleistungen</div>
+            <p className="mt-3 text-[14px] text-slate-600 leading-relaxed max-w-[34rem]">
+              Standardleistungen sind bereits enthalten. Wählen Sie nur, was bei Ihnen zusätzlich
+              anfällt.
+            </p>
+          </div>
+
+          <AddOnSelector values={state.addons} onChange={(key, value) => setAddon(key, value)} />
+
+          {priceBlock}
+
+          <div className="mt-8">
+            <button type="button" onClick={() => setStep("contact")} className={BTN_PRIMARY}>
+              Weiter
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Step 3: Kontakt & Termin (move-out) ---- */}
+      {step === "contact" && isMoveOut && (
+        <div className="c24-step mt-10">
+          <LeadForm
+            serviceCategory={state.category}
+            prefilledData={{
+              apartment_size: state.apartment_size,
+              property_type: state.property_type,
+              addons: state.addons,
+              express: state.express,
+            }}
+            estimatedMin={pricing.min}
+            estimatedMax={pricing.max}
+            onBack={() => setStep("addons")}
+          />
+        </div>
+      )}
+
+      {/* ---- Step 1 (non-move-out): inquiry details + contact ---- */}
+      {step === "contact" && !isMoveOut && (
+        <div className="c24-step">
+          <p className="mt-7 border-l-2 border-teal-500 pl-4 text-[13.5px] text-slate-600 leading-relaxed max-w-[34rem]">
+            {MANUAL_REVIEW_NOTICE}
+          </p>
+          <div className="mt-9">
+            <LeadForm serviceCategory={state.category} onBack={() => setStep("category")} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

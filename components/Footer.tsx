@@ -3,19 +3,21 @@ import { COMPANY } from "@/lib/constants";
 
 export default function Footer() {
   return (
-    <footer className="bg-navy-950 text-navy-300">
-      <div className="container-page py-12">
-        <div className="mb-8 grid grid-cols-1 items-start gap-8 md:grid-cols-2">
+    <footer className="bg-navy-950 text-slate-400">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 items-start">
+          {/* Brand: real full-colour Clean24 logo (transparent PNG) directly on
+              the dark footer — no card/background. */}
           <div>
             <Image
-              src="/clean24-logo-light.png"
+              src="/clean24-logo.png"
               alt="Clean24 – Ihr Reinigungsprofi"
               width={1380}
               height={671}
               className="h-11 md:h-12 w-auto select-none"
               draggable={false}
             />
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-navy-300">
+            <p className="text-sm leading-relaxed max-w-md mt-5">
               Ihre Reinigungsfirma für Umzug, Privat, Büro, Bau, Fenster und Spezialreinigungen –
               Umzugsreinigungen mit Abgabegarantie. Einsätze in der ganzen Schweiz nach
               Verfügbarkeit.
@@ -24,28 +26,28 @@ export default function Footer() {
 
           {/* Contact / company info */}
           <div className="md:text-right">
-            <div className="mb-3 text-sm font-semibold uppercase tracking-wider text-white">Kontakt</div>
+            <div className="text-white font-medium mb-3 text-[11px] uppercase tracking-[0.16em]">Kontakt</div>
             <ul className="space-y-2 text-sm">
               <li>{COMPANY.name}</li>
               <li>
                 {COMPANY.address}, {COMPANY.city}
               </li>
               <li>
-                <a href={`tel:${COMPANY.phone}`} className="transition-colors hover:text-teal-300">
+                <a href={`tel:${COMPANY.phone}`} className="hover:text-white transition-colors">
                   {COMPANY.phoneDisplay}
                 </a>
               </li>
               <li>
-                <a href={`mailto:${COMPANY.email}`} className="transition-colors hover:text-teal-300">
+                <a href={`mailto:${COMPANY.email}`} className="hover:text-white transition-colors">
                   {COMPANY.email}
                 </a>
               </li>
-              <li className="mt-2 text-xs text-navy-400">MwSt Nr.: {COMPANY.mwst}</li>
+              <li className="text-xs text-slate-500 mt-2">MwSt Nr.: {COMPANY.mwst}</li>
             </ul>
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-navy-400 sm:flex-row">
+        <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© {new Date().getFullYear()} {COMPANY.name}. Alle Rechte vorbehalten.</p>
           <p>Ihr Reinigungsservice – Umzugsreinigung mit Abgabegarantie.</p>
         </div>

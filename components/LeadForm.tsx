@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CITIES } from "@/lib/constants";
+import { formatPrice } from "@/lib/pricing";
 import {
   INQUIRY_RECURRENCE_OPTIONS,
   MOVE_OUT_CATEGORY,
@@ -68,6 +69,22 @@ const UPLOAD_ERROR_FAILED =
 const UPLOAD_ERROR_NOT_AVAILABLE =
   "Foto-Upload ist aktuell nicht verfügbar. Bitte senden Sie die Anfrage ohne Fotos.";
 
+/* ---- Clean24 field presentation (styling only) ---- */
+const FIELD =
+  "w-full min-h-[48px] rounded-md border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-slate-400 transition-colors duration-200 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20";
+const LABEL = "block text-[13.5px] text-slate-600 mb-1.5";
+const HINT = "mt-1.5 text-[12px] text-slate-500 leading-snug";
+const REQUIRED_MARK = <span className="text-teal-600">*</span>;
+
+/** Section marker inside the continuous form — a hairline and a quiet label. */
+function GroupTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400 pb-3 mb-5 border-b border-slate-200">
+      {children}
+    </h3>
+  );
+}
+
 function isAllowedUploadFile(file: File): boolean {
   if (ALLOWED_UPLOAD_MIMES.includes(file.type)) return true;
   const name = file.name.toLowerCase();
@@ -89,6 +106,9 @@ export default function LeadForm({
   serviceCategory = MOVE_OUT_CATEGORY,
 }: LeadFormProps) {
   const router = useRouter();
+  const uid = useId();
+  /** Unique DOM id per field — the form can appear twice on one page. */
+  const fid = (name: string) => `${uid}-${name}`;
   const [submitting, setSubmitting] = useState(false);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -355,272 +375,135 @@ export default function LeadForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-7">
       {isMoveOut && estimatedMin && estimatedMax && (
-        <div className="rounded-lg border border-[#b8d5d8] bg-[#eefbf8] px-4 py-3 text-sm text-[#0f766e]">
+        <div className="border-t-2 border-teal-500 pt-4">
+          <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">
+            Aktueller Richtpreis
+          </div>
           {discount && discount.priceMin != null && discount.priceMax != null ? (
             <>
-              Ihr Richtpreis:{" "}
-              <span className="text-slate-400 line-through">
-                CHF {estimatedMin} – CHF {estimatedMax}
-              </span>{" "}
-              <strong>
-                CHF {discount.priceMin} – CHF {discount.priceMax}
-              </strong>
-              <span className="mt-0.5 block text-xs text-[#0f766e]">
+              <div className="mt-2 text-[30px] sm:text-[34px] font-semibold tracking-[-0.025em] text-ink tabular-nums leading-none">
+                {formatPrice(discount.priceMin)} – {formatPrice(discount.priceMax)}
+              </div>
+              <div className="mt-2 text-[13px] text-slate-500 line-through tabular-nums">
+                {formatPrice(estimatedMin)} – {formatPrice(estimatedMax)}
+              </div>
+              <span className="block text-[13px] text-teal-700 mt-1">
                 Rabatt {discount.code} (−{discount.label}) angewendet.
               </span>
             </>
           ) : (
-            <>
-              Ihr Richtpreis: <strong>CHF {estimatedMin} – CHF {estimatedMax}</strong>
-            </>
+            <div className="mt-2 text-[30px] sm:text-[34px] font-semibold tracking-[-0.025em] text-ink tabular-nums leading-none">
+              {formatPrice(estimatedMin)} – {formatPrice(estimatedMax)}
+            </div>
           )}
-          <span className="mt-0.5 block text-xs text-slate-500">
-            Wird nach Prüfung Ihrer Angaben bestätigt.
-          </span>
+          <div className="mt-2.5 text-[13px] text-slate-500">
+            inkl. 8.1% MwSt. · unverbindlich · wird nach Prüfung Ihrer Angaben bestätigt
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-            Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            value={form.customer_name ?? ""}
-            onChange={(e) => updateField("customer_name", e.target.value)}
-            placeholder="Vorname Nachname"
-            className="c24-input"
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-            Telefon <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="tel"
-            required
-            value={form.phone ?? ""}
-            onChange={(e) => updateField("phone", e.target.value)}
-            placeholder="+41 79 000 00 00"
-            className="c24-input"
-          />
-        </div>
-      </div>
+      {/* ---- 1. Objekt & Termin ---- */}
+      <section>
+        <GroupTitle>Objekt &amp; Termin</GroupTitle>
 
-      <div>
-        <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-          E-Mail <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="email"
-          required
-          value={form.email ?? ""}
-          onChange={(e) => updateField("email", e.target.value)}
-          placeholder="ihre@email.ch"
-          className="c24-input"
-        />
-      </div>
-
-      <div>
-        <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-          Adresse / Strasse und Hausnummer <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          required
-          value={form.address ?? ""}
-          onChange={(e) => updateField("address", e.target.value)}
-          placeholder="Musterstrasse 12"
-          className="c24-input"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-            PLZ <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            value={form.zip ?? ""}
-            onChange={(e) => updateField("zip", e.target.value)}
-            placeholder="8953"
-            maxLength={4}
-            className="c24-input"
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-            Ort <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            list="city-list"
-            value={form.city ?? ""}
-            onChange={(e) => updateField("city", e.target.value)}
-            placeholder="Dietikon"
-            className="c24-input"
-          />
-          <datalist id="city-list">
-            {CITIES.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </div>
-      </div>
-
-      {isMoveOut ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-              Reinigungsdatum <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={form.cleaning_date ?? ""}
-              onChange={(e) => updateField("cleaning_date", e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              className="c24-input"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-              Abgabetermin (optional)
-            </label>
-            <input
-              type="date"
-              value={form.handover_date ?? ""}
-              onChange={(e) => updateField("handover_date", e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              className="c24-input"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-              Abgabezeit (optional)
-            </label>
-            <input
-              type="time"
-              value={form.handover_time ?? ""}
-              onChange={(e) => updateField("handover_time", e.target.value)}
-              className="c24-input"
-            />
-            <p className="mt-1 text-xs text-gray-400 leading-snug">
-              Optional – falls die Uhrzeit der Wohnungsabgabe bereits bekannt ist.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-              Objektart <span className="text-red-500">*</span>
-            </label>
-            <select
-              required
-              value={form.object_type ?? ""}
-              onChange={(e) => updateField("object_type", e.target.value)}
-              className="c24-input"
-            >
-              <option value="">Bitte wählen</option>
-              {OBJECT_TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-              Gewünschter Termin (optional)
-            </label>
-            <input
-              type="date"
-              value={form.cleaning_date ?? ""}
-              onChange={(e) => updateField("cleaning_date", e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              className="c24-input"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-              Wiederholung
-            </label>
-            <select
-              value={form.recurrence ?? ""}
-              onChange={(e) => handleInquiryRecurrenceChange(e.target.value)}
-              className="c24-input"
-            >
-              <option value="">Bitte wählen</option>
-              {INQUIRY_RECURRENCE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {form.recurrence && RECURRENCE_COUNT_CONFIG[form.recurrence] && (
+        <div className="space-y-4">
+          {isMoveOut ? (
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-                {RECURRENCE_COUNT_CONFIG[form.recurrence].label}
-              </label>
-              <select
-                value={form.recurrence_count ?? ""}
-                onChange={(e) =>
-                  handleRecurrenceCountChange(form.recurrence as string, e.target.value)
-                }
-                className="c24-input"
-              >
-                <option value="">Bitte wählen</option>
-                {Array.from(
-                  { length: RECURRENCE_COUNT_CONFIG[form.recurrence].max },
-                  (_, i) => i + 1
-                ).map((n) => (
-                  <option key={n} value={n}>
-                    {RECURRENCE_COUNT_CONFIG[form.recurrence as string].optionLabel(n)}
-                  </option>
-                ))}
-              </select>
+              <label htmlFor={fid("cleaning-date")} className={LABEL}>Reinigungsdatum {REQUIRED_MARK}</label>
+              <input
+                type="date"
+                required
+                value={form.cleaning_date ?? ""}
+                onChange={(e) => updateField("cleaning_date", e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                id={fid("cleaning-date")}
+                className={FIELD}
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor={fid("object-type")} className={LABEL}>Objektart {REQUIRED_MARK}</label>
+                <select
+                  required
+                  value={form.object_type ?? ""}
+                  onChange={(e) => updateField("object_type", e.target.value)}
+                  id={fid("object-type")}
+                  className={FIELD}
+                >
+                  <option value="">Bitte wählen</option>
+                  {OBJECT_TYPE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor={fid("preferred-date")} className={LABEL}>Gewünschter Termin (optional)</label>
+                <input
+                  type="date"
+                  value={form.cleaning_date ?? ""}
+                  onChange={(e) => updateField("cleaning_date", e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  id={fid("preferred-date")}
+                  className={FIELD}
+                />
+              </div>
+              <div>
+                <label htmlFor={fid("recurrence")} className={LABEL}>Wiederholung</label>
+                <select
+                  value={form.recurrence ?? ""}
+                  onChange={(e) => handleInquiryRecurrenceChange(e.target.value)}
+                  id={fid("recurrence")}
+                  className={FIELD}
+                >
+                  <option value="">Bitte wählen</option>
+                  {INQUIRY_RECURRENCE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {form.recurrence && RECURRENCE_COUNT_CONFIG[form.recurrence] && (
+                <div>
+                  <label htmlFor={fid("recurrence-count")} className={LABEL}>
+                    {RECURRENCE_COUNT_CONFIG[form.recurrence].label}
+                  </label>
+                  <select
+                    value={form.recurrence_count ?? ""}
+                    onChange={(e) =>
+                      handleRecurrenceCountChange(form.recurrence as string, e.target.value)
+                    }
+                    id={fid("recurrence-count")}
+                    className={FIELD}
+                  >
+                    <option value="">Bitte wählen</option>
+                    {Array.from(
+                      { length: RECURRENCE_COUNT_CONFIG[form.recurrence].max },
+                      (_, i) => i + 1
+                    ).map((n) => (
+                      <option key={n} value={n}>
+                        {RECURRENCE_COUNT_CONFIG[form.recurrence as string].optionLabel(n)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {(isUmzugsreinigung || isRecurringService) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {isUmzugsreinigung && (
-            <div>
-              <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-                Abgabegarantie gewünscht?
-              </label>
-              <select
-                value={(form.handover_guarantee_requested ?? true) ? "ja" : "nein"}
-                onChange={(e) =>
-                  updateField("handover_guarantee_requested", e.target.value === "ja")
-                }
-                className="c24-input"
-              >
-                <option value="ja">Ja</option>
-                <option value="nein">Nein</option>
-              </select>
-            </div>
-          )}
           {isRecurringService && (
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-                Wiederholung
-              </label>
+              <label htmlFor={fid("recurrence-service")} className={LABEL}>Wiederholung</label>
               <select
                 value={form.recurrence ?? ""}
                 onChange={(e) => updateField("recurrence", e.target.value)}
-                className="c24-input"
+                id={fid("recurrence-service")}
+                className={FIELD}
               >
                 <option value="">Bitte wählen</option>
                 {RECURRENCE_OPTIONS.map((o) => (
@@ -631,190 +514,332 @@ export default function LeadForm({
               </select>
             </div>
           )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor={fid("square-meters")} className={LABEL}>
+                {isMoveOut ? "Bodenfläche in m² (optional)" : "Fläche in m² (optional)"}
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={form.square_meters ?? ""}
+                onChange={(e) => updateField("square_meters", e.target.value)}
+                placeholder="z.B. 85"
+                id={fid("square-meters")}
+                className={FIELD}
+              />
+            </div>
+            {isMoveOut && (
+              <div>
+                <label htmlFor={fid("windows-count")} className={LABEL}>Anzahl Fenster (optional)</label>
+                <input
+                  type="number"
+                  value={form.windows_count ?? ""}
+                  onChange={(e) => updateField("windows_count", e.target.value)}
+                  placeholder="z.B. 8"
+                  id={fid("windows-count")}
+                  className={FIELD}
+                />
+              </div>
+            )}
+            {isMoveOut && (
+              <div>
+                <label htmlFor={fid("dirtiness")} className={LABEL}>Verschmutzungsgrad (optional)</label>
+                <select
+                  value={form.dirtiness_level ?? ""}
+                  onChange={(e) => updateField("dirtiness_level", e.target.value)}
+                  id={fid("dirtiness")}
+                  className={FIELD}
+                >
+                  <option value="">Bitte wählen</option>
+                  <option value="low">Wenig schmutzig</option>
+                  <option value="medium">Mittel schmutzig</option>
+                  <option value="high">Sehr schmutzig</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor={fid("notes")} className={LABEL}>
+              {isMoveOut ? "Bemerkungen (optional)" : "Beschreibung / Bemerkungen (optional)"}
+            </label>
+            <textarea
+              rows={3}
+              value={form.notes ?? ""}
+              onChange={(e) => updateField("notes", e.target.value)}
+              placeholder="Besonderheiten, spezielle Wünsche, Fragen..."
+              id={fid("notes")}
+              className={`${FIELD} resize-none`}
+            />
+            {!isMoveOut && form.recurrence === "by_agreement" && (
+              <p className={HINT}>
+                Bitte beschreiben Sie den gewünschten Rhythmus kurz in den Bemerkungen.
+              </p>
+            )}
+          </div>
         </div>
+      </section>
+
+      {/* ---- 2. Wohnungsabgabe (move-out only) ---- */}
+      {isMoveOut && (
+        <section>
+          <GroupTitle>Wohnungsabgabe</GroupTitle>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor={fid("handover-date")} className={LABEL}>Abgabetermin (optional)</label>
+              <input
+                type="date"
+                value={form.handover_date ?? ""}
+                onChange={(e) => updateField("handover_date", e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                id={fid("handover-date")}
+                className={FIELD}
+              />
+            </div>
+            <div>
+              <label htmlFor={fid("handover-time")} className={LABEL}>Abgabezeit (optional)</label>
+              <input
+                type="time"
+                value={form.handover_time ?? ""}
+                onChange={(e) => updateField("handover_time", e.target.value)}
+                id={fid("handover-time")}
+                className={FIELD}
+              />
+              <p className={HINT}>Falls die Uhrzeit der Wohnungsabgabe bereits bekannt ist.</p>
+            </div>
+            {isUmzugsreinigung && (
+              <div>
+                <label htmlFor={fid("handover-guarantee")} className={LABEL}>Abgabegarantie gewünscht?</label>
+                <select
+                  value={(form.handover_guarantee_requested ?? true) ? "ja" : "nein"}
+                  onChange={(e) =>
+                    updateField("handover_guarantee_requested", e.target.value === "ja")
+                  }
+                  id={fid("handover-guarantee")}
+                  className={FIELD}
+                >
+                  <option value="ja">Ja</option>
+                  <option value="nein">Nein</option>
+                </select>
+              </div>
+            )}
+          </div>
+        </section>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-            {isMoveOut ? "Bodenfläche in m² (optional)" : "Fläche in m² (optional)"}
-          </label>
-          <input
-            type="number"
-            min={1}
-            value={form.square_meters ?? ""}
-            onChange={(e) => updateField("square_meters", e.target.value)}
-            placeholder="z.B. 85"
-            className="c24-input"
-          />
-        </div>
-        {isMoveOut && (
+      {/* ---- 3. Kontaktdaten ---- */}
+      <section>
+        <GroupTitle>Kontaktdaten</GroupTitle>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor={fid("name")} className={LABEL}>Name {REQUIRED_MARK}</label>
+              <input
+                type="text"
+                required
+                value={form.customer_name ?? ""}
+                onChange={(e) => updateField("customer_name", e.target.value)}
+                placeholder="Vorname Nachname"
+                id={fid("name")}
+                className={FIELD}
+              />
+            </div>
+            <div>
+              <label htmlFor={fid("phone")} className={LABEL}>Telefon {REQUIRED_MARK}</label>
+              <input
+                type="tel"
+                required
+                value={form.phone ?? ""}
+                onChange={(e) => updateField("phone", e.target.value)}
+                placeholder="+41 79 000 00 00"
+                id={fid("phone")}
+                className={FIELD}
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-              Anzahl Fenster (optional)
-            </label>
+            <label htmlFor={fid("email")} className={LABEL}>E-Mail {REQUIRED_MARK}</label>
             <input
-              type="number"
-              value={form.windows_count ?? ""}
-              onChange={(e) => updateField("windows_count", e.target.value)}
-              placeholder="z.B. 8"
-              className="c24-input"
+              type="email"
+              required
+              value={form.email ?? ""}
+              onChange={(e) => updateField("email", e.target.value)}
+              placeholder="ihre@email.ch"
+              id={fid("email")}
+              className={FIELD}
             />
           </div>
-        )}
-      </div>
 
-      {isMoveOut && (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor={fid("address")} className={LABEL}>Adresse / Strasse und Hausnummer {REQUIRED_MARK}</label>
+            <input
+              type="text"
+              required
+              value={form.address ?? ""}
+              onChange={(e) => updateField("address", e.target.value)}
+              placeholder="Musterstrasse 12"
+              id={fid("address")}
+              className={FIELD}
+            />
+          </div>
+
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-4">
+            <div>
+              <label htmlFor={fid("zip")} className={LABEL}>PLZ {REQUIRED_MARK}</label>
+              <input
+                type="text"
+                required
+                value={form.zip ?? ""}
+                onChange={(e) => updateField("zip", e.target.value)}
+                placeholder="8953"
+                maxLength={4}
+                id={fid("zip")}
+                className={FIELD}
+              />
+            </div>
+            <div>
+              <label htmlFor={fid("city")} className={LABEL}>Ort {REQUIRED_MARK}</label>
+              <input
+                type="text"
+                required
+                list={fid("city-list")}
+                value={form.city ?? ""}
+                onChange={(e) => updateField("city", e.target.value)}
+                placeholder="Dietikon"
+                id={fid("city")}
+                className={FIELD}
+              />
+              <datalist id={fid("city-list")}>
+                {CITIES.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- 4. Fotos (optional) ---- */}
+      <section>
+        <GroupTitle>Fotos (optional)</GroupTitle>
+
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-            Verschmutzungsgrad (optional)
-          </label>
-          <select
-            value={form.dirtiness_level ?? ""}
-            onChange={(e) => updateField("dirtiness_level", e.target.value)}
-            className="c24-input"
-          >
-            <option value="">Bitte wählen</option>
-            <option value="low">Wenig schmutzig</option>
-            <option value="medium">Mittel schmutzig</option>
-            <option value="high">Sehr schmutzig</option>
-          </select>
-        </div>
-      </div>
-      )}
-
-      <div>
-        <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-          {isMoveOut ? "Bemerkungen (optional)" : "Beschreibung / Bemerkungen (optional)"}
-        </label>
-        <textarea
-          rows={3}
-          value={form.notes ?? ""}
-          onChange={(e) => updateField("notes", e.target.value)}
-          placeholder="Besonderheiten, spezielle Wünsche, Fragen..."
-          className="c24-input min-h-28 resize-y"
-        />
-        {!isMoveOut && form.recurrence === "by_agreement" && (
-          <p className="mt-1 text-xs text-gray-500 leading-snug">
-            Bitte beschreiben Sie den gewünschten Rhythmus kurz in den Bemerkungen.
+          <p className="text-[13.5px] text-slate-600 leading-relaxed mb-3 max-w-[34rem]">
+            Fotos der Wohnung oder des Objekts helfen uns, Ihre Anfrage genauer zu prüfen.
           </p>
-        )}
-      </div>
-
-      <div>
-        <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-          Fotos hochladen (optional)
-        </label>
-        <p className="text-xs text-gray-500 mb-2 leading-snug">
-          Laden Sie optional Fotos der Wohnung oder des Objekts hoch, damit wir Ihre
-          Anfrage genauer prüfen können.
-        </p>
-        <input
-          type="file"
-          multiple
-          accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
-          onChange={handleFilesSelected}
-          className="c24-input text-slate-600 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-[#eefbf8] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#0f766e]"
-        />
-        <p className="mt-1 text-xs text-gray-400">
-          Max. 10 Dateien, je max. 10 MB. JPG, PNG, WEBP oder PDF.
-        </p>
-        {uploadFiles.length > 0 && (
-          <ul className="mt-2 space-y-1">
-            {uploadFiles.map((file, index) => (
-              <li
-                key={`${file.name}-${index}`}
-                className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5"
-              >
-                <span className="flex-1 truncate">{file.name}</span>
-                <span className="text-gray-400 whitespace-nowrap">
-                  {formatFileSizeMb(file.size)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removeUploadFile(index)}
-                  disabled={submitting}
-                  aria-label={`${file.name} entfernen`}
-                  className="text-gray-400 hover:text-red-500 disabled:opacity-50 font-semibold px-1"
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {uploadError && <p className="mt-1 text-xs text-red-600">{uploadError}</p>}
-      </div>
-
-      {isMoveOut && (
-      <div>
-        <label className="mb-1.5 block text-sm font-semibold text-[#0b1f33]">
-          Rabattcode (optional)
-        </label>
-        <div className="flex gap-2">
           <input
-            type="text"
-            value={discountCode}
-            onChange={(e) => {
-              setDiscountCode(e.target.value);
-              setDiscount(null);
-              setDiscountError(null);
-            }}
-            placeholder="z.B. SOMMER10"
-          className="c24-input flex-1"
+            type="file"
+            multiple
+            accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+            onChange={handleFilesSelected}
+            aria-label="Fotos hochladen (optional)"
+            className="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2.5 text-[13px] text-slate-600 transition-colors duration-200 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 file:mr-3 file:border-0 file:bg-mist file:text-ink file:font-medium file:text-[12.5px] file:px-3 file:py-1.5 file:rounded file:cursor-pointer"
           />
-          <button
-            type="button"
-            onClick={applyDiscount}
-            disabled={discountChecking || !discountCode.trim()}
-            className="c24-button-secondary whitespace-nowrap px-5 disabled:opacity-50"
-          >
-            {discountChecking ? "Prüfen..." : "Anwenden"}
-          </button>
-        </div>
-        {discount ? (
-          <p className="mt-1 text-xs text-green-600">
-            Rabatt {discount.code} (−{discount.label}) angewendet.
+          <p className="mt-2 text-[12px] text-slate-500">
+            Max. 10 Dateien, je max. 10 MB. JPG, PNG, WEBP oder PDF.
           </p>
-        ) : discountError ? (
-          <p className="mt-1 text-xs text-red-600">{discountError}</p>
-        ) : null}
-      </div>
+          {uploadFiles.length > 0 && (
+            <ul className="mt-3 border-t border-slate-200">
+              {uploadFiles.map((file, index) => (
+                <li
+                  key={`${file.name}-${index}`}
+                  className="flex items-center gap-3 text-[13px] text-slate-600 border-b border-slate-200 py-2.5"
+                >
+                  <span className="flex-1 truncate">{file.name}</span>
+                  <span className="text-slate-400 whitespace-nowrap tabular-nums">
+                    {formatFileSizeMb(file.size)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeUploadFile(index)}
+                    disabled={submitting}
+                    aria-label={`${file.name} entfernen`}
+                    className="text-slate-400 hover:text-ink disabled:opacity-50 px-1 rounded transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40"
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {uploadError && <p className="mt-2 text-[13px] text-red-600">{uploadError}</p>}
+        </div>
+      </section>
+
+      {/* ---- 5. Rabattcode (move-out only) ---- */}
+      {isMoveOut && (
+        <section>
+          <GroupTitle>Rabattcode (optional)</GroupTitle>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={discountCode}
+              onChange={(e) => {
+                setDiscountCode(e.target.value);
+                setDiscount(null);
+                setDiscountError(null);
+              }}
+              placeholder="z.B. SOMMER10"
+              aria-label="Rabattcode"
+              className={`${FIELD} flex-1`}
+            />
+            <button
+              type="button"
+              onClick={applyDiscount}
+              disabled={discountChecking || !discountCode.trim()}
+              className="min-h-[48px] border border-slate-300 bg-white text-ink hover:border-teal-600 hover:text-teal-700 disabled:opacity-50 disabled:hover:border-slate-300 disabled:hover:text-ink font-medium text-[14px] px-5 rounded-md transition-colors duration-200 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40"
+            >
+              {discountChecking ? "Prüfen..." : "Anwenden"}
+            </button>
+          </div>
+          {discount ? (
+            <p className="mt-1.5 text-[12.5px] text-teal-600">
+              Rabatt {discount.code} (−{discount.label}) angewendet.
+            </p>
+          ) : discountError ? (
+            <p className="mt-1.5 text-[12.5px] text-red-600">{discountError}</p>
+          ) : null}
+        </section>
       )}
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p className="border-l-2 border-red-500 pl-4 text-[13.5px] text-red-700 leading-relaxed">
           {error}
-        </div>
+        </p>
       )}
 
-      <div className="flex gap-3">
-        {onBack && (
+      <div className="border-t border-slate-200 pt-7">
+        <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
           <button
-            type="button"
-            onClick={onBack}
-            className="c24-button-secondary flex-1"
+            type="submit"
+            disabled={submitting}
+            className="inline-flex items-center justify-center h-12 px-7 rounded-md bg-navy-900 text-white text-[15px] font-medium transition-colors duration-200 hover:bg-ink disabled:opacity-60 disabled:hover:bg-navy-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40 focus-visible:ring-offset-2"
           >
-            Zurück
+            {uploadingPhotos
+              ? "Fotos werden hochgeladen..."
+              : submitting
+                ? "Wird gesendet..."
+                : "Kostenlose Anfrage senden"}
           </button>
-        )}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="c24-button-primary flex-grow disabled:opacity-60"
-        >
-          {uploadingPhotos
-            ? "Fotos werden hochgeladen..."
-            : submitting
-              ? "Wird gesendet..."
-              : "Kostenlose Anfrage absenden"}
-        </button>
-      </div>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="text-[14px] text-slate-500 hover:text-ink transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40"
+            >
+              Zurück
+            </button>
+          )}
+        </div>
 
-      <p className="rounded-lg bg-[#f7fafb] px-4 py-3 text-center text-xs leading-relaxed text-slate-500">
-        Keine Vorauszahlung. Unverbindlich. Nach Ihrer Anfrage läuft der weitere Ablauf strukturiert über Clean24.
-      </p>
+        <p className="mt-4 text-[13px] text-slate-500">Unverbindlich · keine Vorauszahlung</p>
+      </div>
     </form>
   );
 }
